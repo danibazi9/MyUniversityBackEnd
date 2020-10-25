@@ -6,4 +6,6 @@ from . import views
 app_name = 'MyUniversity'
 urlpatterns = [
     path('users/', views.UsersList.as_view()),
+    path('users/<int:stuID>', views.UsersDetails.as_view()),
+    path('send-email/<int:stuID>', views.SendEmail.as_view()),
 ]
