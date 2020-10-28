@@ -1,3 +1,4 @@
+from django.core.validators import MinLengthValidator
 from django.db import models
 
 
@@ -5,18 +6,11 @@ from django.db import models
 class User(models.Model):
     user_id = models.AutoField(primary_key=True)
     first_name = models.CharField(max_length=20)
-    last_name = models.CharField(max_length=20)
-    email = models.EmailField(max_length=256)
-    student_id = models.IntegerField(unique=True)
+    last_name = models.CharField(max_length=30)
+    email = models.EmailField(max_length=256, unique=True)
+    student_id = models.IntegerField()
+    university = models.CharField(max_length=20)
+    password = models.CharField(max_length=20, validators=[MinLengthValidator(6)])
 
     def __str__(self):
         return self.first_name + " " + self.last_name
-
-
-# class EmailVerify(models.Model):
-#     user = models.ForeignKey(User, on_delete=models.CASCADE)
-#     vc_code = models.IntegerField(default=0)
-#     expired_time = models.TimeField()
-#
-#     def __str__(self):
-#         return self.user.email + " " + str(self.vc_code)
