@@ -57,7 +57,7 @@ class UsersDetails(APIView):
             return Response(f"User with student_id {stuID} Not Found!", status=status.HTTP_404_NOT_FOUND)
         serializer = UserSerializer(user_to_edit, data=request.data)
         if serializer.is_valid():
-            # if 'email' in serializer.validated_data:
+            if 'email' in serializer.validated_data:
                 if validate_email(serializer.validated_data.get('email'), verify=True):
                     if serializer.validated_data.get('email').endswith('.iust.ac.ir'):
                         serializer.save()
@@ -68,8 +68,8 @@ class UsersDetails(APIView):
                 else:
                     return Response(f"The email '{serializer['email'].value}' doesn't exist",
                                     status=status.HTTP_406_NOT_ACCEPTABLE)
-            # else:
-            #     serializer.save()
-            #     return Response(serializer.data, status=status.HTTP_201_CREATED)
+            else:
+                serializer.save()
+                return Response(serializer.data, status=status.HTTP_201_CREATED)
 
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
