@@ -19,3 +19,11 @@ def get_user(stuID):
     except User.DoesNotExist:
         return None
 
+
+# Create your views here.
+class UsersList(APIView):
+    def get(self, request):
+        all_users = User.objects.all()
+        serializer = UserSerializer(all_users, many=True)
+        return Response(serializer.data)
+
