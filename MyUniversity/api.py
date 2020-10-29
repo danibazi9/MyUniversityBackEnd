@@ -89,3 +89,19 @@ class SendEmail(APIView):
             return Response(f"User with student_id {stuID} Not Found!", status=status.HTTP_404_NOT_FOUND)
 
         random_code_generated = random.randrange(100000, 999999)
+
+        template = render_to_string('email_template.html',
+                                    {'name': user_to_send_email.first_name,
+                                     'code': random_code_generated})
+
+        email = EmailMessage(
+            'Welcome to MyUniversity Platform!',
+            template,
+            'MyUniversity Organization',
+            [user_to_send_email.email]
+        )
+
+        email.content_subtype = "html"
+        email.fail_silently = False
+        email.send()
+        
