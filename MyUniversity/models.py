@@ -3,14 +3,24 @@ from django.db import models
 
 
 # Create your models here.
+class University(models.Model):
+    university_id = models.IntegerField()
+    university_name = models.CharField(max_length=30)
+    university_domain = models.CharField(max_length=10)
+
+    def __str__(self):
+        return self.university_name
+
+
 class User(models.Model):
     user_id = models.AutoField(primary_key=True)
     first_name = models.CharField(max_length=20)
     last_name = models.CharField(max_length=30)
     email = models.EmailField(max_length=256, unique=True)
     student_id = models.IntegerField()
-    university = models.CharField(max_length=20)
-    password = models.CharField(max_length=20, validators=[MinLengthValidator(6)])
+    university = models.ForeignKey(University, on_delete=models.CASCADE)
+    mobile_number = models.BigIntegerField()
+    password = models.CharField(max_length=20, validators=[MinLengthValidator(6)], blank=True)
 
     def __str__(self):
         return self.first_name + " " + self.last_name + " " + str(self.student_id)
