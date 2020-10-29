@@ -4,7 +4,7 @@ from django.db import models
 
 # Create your models here.
 class University(models.Model):
-    university_id = models.IntegerField()
+    university_id = models.IntegerField(unique=True)
     university_name = models.CharField(max_length=30)
     university_domain = models.CharField(max_length=10)
 
