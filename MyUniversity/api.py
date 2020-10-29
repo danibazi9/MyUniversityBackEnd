@@ -58,16 +58,16 @@ class UsersDetails(APIView):
         serializer = UserSerializer(user_to_edit, data=request.data)
         if serializer.is_valid():
             # if 'email' in serializer.validated_data:
-            if validate_email(serializer.validated_data.get('email'), verify=True):
-                if serializer.validated_data.get('email').endswith('.iust.ac.ir'):
-                    serializer.save()
-                    return Response(serializer.data, status=status.HTTP_201_CREATED)
+                if validate_email(serializer.validated_data.get('email'), verify=True):
+                    if serializer.validated_data.get('email').endswith('.iust.ac.ir'):
+                        serializer.save()
+                        return Response(serializer.data, status=status.HTTP_201_CREATED)
+                    else:
+                        return Response(f"The email '{serializer['email'].value}' isn't the academical university email",
+                                        status=status.HTTP_406_NOT_ACCEPTABLE)
                 else:
-                    return Response(f"The email '{serializer['email'].value}' isn't the academical university email",
+                    return Response(f"The email '{serializer['email'].value}' doesn't exist",
                                     status=status.HTTP_406_NOT_ACCEPTABLE)
-                # else:
-                #     return Response(f"The email '{serializer['email'].value}' doesn't exist",
-                #                     status=status.HTTP_406_NOT_ACCEPTABLE)
             # else:
             #     serializer.save()
             #     return Response(serializer.data, status=status.HTTP_201_CREATED)
