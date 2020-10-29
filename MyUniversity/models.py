@@ -5,8 +5,8 @@ from django.db import models
 # Create your models here.
 class University(models.Model):
     university_id = models.IntegerField(unique=True)
-    university_name = models.CharField(max_length=30)
-    university_domain = models.CharField(max_length=10)
+    university_name = models.CharField(max_length=30, unique=True)
+    university_domain = models.CharField(max_length=10, unique=True)
 
     def __str__(self):
         return self.university_name
