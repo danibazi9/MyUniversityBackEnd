@@ -41,3 +41,12 @@ class UsersList(APIView):
                 return Response(f"The email '{serializer['email'].value}' doesn't exist",
                                 status=status.HTTP_406_NOT_ACCEPTABLE)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+class UsersDetails(APIView):
+    def get(self, request, stuID):
+        user_to_show = get_user(stuID)
+        if not user_to_show:
+            return Response(f"User with student_id {stuID} Not Found!", status=status.HTTP_404_NOT_FOUND)
+        serializer = UserSerializer(user_to_show)
+        return Response(serializer.data)
