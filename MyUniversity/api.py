@@ -80,3 +80,12 @@ class UsersDetails(APIView):
             return Response(f"User with student_id {stuID} Not Found!", status=status.HTTP_404_NOT_FOUND)
         user_to_delete.delete()
         return Response(f"The user with student_id {stuID} has deleted successfully!", status=status.HTTP_204_NO_CONTENT)
+
+
+class SendEmail(APIView):
+    def get(self, request, stuID):
+        user_to_send_email = get_user(stuID)
+        if not user_to_send_email:
+            return Response(f"User with student_id {stuID} Not Found!", status=status.HTTP_404_NOT_FOUND)
+
+        random_code_generated = random.randrange(100000, 999999)
