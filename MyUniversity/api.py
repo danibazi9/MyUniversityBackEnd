@@ -30,16 +30,16 @@ class UsersList(APIView):
     def post(self, request):
         serializer = UserSerializer(data=request.data)
         if serializer.is_valid():
-            # if validate_email(serializer.validated_data.get('email'), verify=True):
-            #     if serializer.validated_data.get('email').endswith('.iust.ac.ir'):
+            if validate_email(serializer.validated_data.get('email'), verify=True):
+                # if serializer.validated_data.get('email').endswith('.iust.ac.ir'):
                 serializer.save()
                 return Response(serializer.data, status=status.HTTP_201_CREATED)
                 # else:
                 #     return Response(f"The email '{serializer['email'].value}' isn't the academical university email",
                 #                     status=status.HTTP_406_NOT_ACCEPTABLE)
-            # else:
-            #     return Response(f"The email '{serializer['email'].value}' doesn't exist",
-            #                     status=status.HTTP_406_NOT_ACCEPTABLE)
+            else:
+                return Response(f"The email '{serializer['email'].value}' doesn't exist",
+                                status=status.HTTP_406_NOT_ACCEPTABLE)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
