@@ -104,4 +104,7 @@ class SendEmail(APIView):
         email.content_subtype = "html"
         email.fail_silently = False
         email.send()
-        
+
+        serializer = UserSerializer(user_to_send_email)
+        json_responsed = {"email": serializer.data['email'], "vc_code": random_code_generated}
+        return Response(json_responsed)
