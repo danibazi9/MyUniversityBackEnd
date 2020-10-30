@@ -30,7 +30,7 @@ class UsersList(APIView):
     def post(self, request):
         serializer = UserSerializer(data=request.data)
         if serializer.is_valid():
-            if validate_email(serializer.validated_data.get('email'), verify=True):
+            if validate_email(serializer.validated_data.get('email')):
                 if serializer.validated_data.get('email').endswith('.iust.ac.ir'):
                     serializer.save()
                     return Response(serializer.data, status=status.HTTP_201_CREATED)
@@ -58,7 +58,7 @@ class UsersDetails(APIView):
         serializer = UserSerializer(user_to_edit, data=request.data)
         if serializer.is_valid():
             if 'email' in serializer.validated_data:
-                if validate_email(serializer.validated_data.get('email'), verify=True):
+                if validate_email(serializer.validated_data.get('email')):
                     if serializer.validated_data.get('email').endswith('.iust.ac.ir'):
                         serializer.save()
                         return Response(serializer.data, status=status.HTTP_201_CREATED)
