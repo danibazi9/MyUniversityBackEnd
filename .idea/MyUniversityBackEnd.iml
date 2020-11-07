@@ -16,8 +16,11 @@
     <content url="file://$MODULE_DIR$">
       <excludeFolder url="file://$MODULE_DIR$/venv" />
     </content>
-    <orderEntry type="jdk" jdkName="Python 3.6 (MyUniversityBackEnd)" jdkType="Python SDK" />
+    <orderEntry type="jdk" jdkName="Python 3.8 (MyUniversityBackEnd)" jdkType="Python SDK" />
     <orderEntry type="sourceFolder" forTests="false" />
+  </component>
+  <component name="PackageRequirementsSettings">
+    <option name="requirementsPath" value="D:\iEducation\University\TermNo5\System Desgin &amp; Analysis\MyUniversityBackEnd\requirements_personal.txt" />
   </component>
   <component name="TemplatesService">
     <option name="TEMPLATE_CONFIGURATION" value="Django" />
@@ -26,5 +29,8 @@
         <option value="$MODULE_DIR$/../MyUniversityBackEnd\templates" />
       </list>
     </option>
+  </component>
+  <component name="TestRunnerService">
+    <option name="PROJECT_TEST_RUNNER" value="Unittests" />
   </component>
 </module>
