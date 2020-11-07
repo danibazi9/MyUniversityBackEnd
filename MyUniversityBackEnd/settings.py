@@ -73,7 +73,7 @@ TEMPLATES = [
 ]
 
 WSGI_APPLICATION = 'MyUniversityBackEnd.wsgi.application'
-# ASGI_APPLICATION = 'chat.routing.application'
+ASGI_APPLICATION = 'chat.routing.application'
 
 
 # Database
