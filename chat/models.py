@@ -5,7 +5,7 @@ from MyUniversity.models import User
 # Create your models here.
 class ChatRoom(models.Model):
     title = models.CharField(max_length=255, unique=True, blank=False)
-    users = models.OneToOneField(User, on_delete=models.CASCADE)
+    user = models.OneToOneField(User, on_delete=models.CASCADE)
 
     def __str__(self):
         return self.title
@@ -13,11 +13,11 @@ class ChatRoom(models.Model):
 
 class ChatMessageManager(models.Manager):
     def by_room(self, room):
-        qs = ChatMessages.objects.filter(room=room).order_by("-timestamp")
+        qs = ChatMessage.objects.filter(room=room).order_by("-timestamp")
         return qs
 
 
-class ChatMessages(models.Model):
+class ChatMessage(models.Model):
     # Chat message created by the user inside a ChatRoom (Foreign key)
     user = models.ForeignKey(User, on_delete=models.CASCADE)
     room = models.ForeignKey(ChatRoom, on_delete=models.CASCADE)
