@@ -8,5 +8,5 @@ urlpatterns = [
     path('api/users-list/', api.UsersList.as_view()),
     path('api/users-list/<int:stuID>', api.UsersDetails.as_view()),
     path('api/send-email/<int:stuID>', api.SendEmail.as_view()),
-    path('api/book/', include('MyUniversity.BookBSE.urls'))
+    path('api/bbse/', include('MyUniversity.BookBSE.urls'))
 ]
