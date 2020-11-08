@@ -40,3 +40,16 @@ class Book(models.Model):
     def __str__(self):
         return "Name: " + self.name + ", Author: " + self.author
 
+# class Trade(models.Model):
+#     trade_id = models.AutoField(primary_key=True)
+#     book_id = models.ForeignKey(Book, on_delete=models.CASCADE)
+#     print_run = models.CharField(max_length=3)
+#     image = models.ImageField(null=True, blank=True)
+#     price = models.IntegerField()
+#
+#     seller_id = models.ForeignKey(User, on_delete=models.CASCADE)
+#     buyer_id = models.ForeignKey(User, on_delete=models.CASCADE, null=True)
+#     add_date = models.DateTimeField(auto_now_add=True)
+#     update_date = models.DateTimeField(auto_now=True)
+#     trade_date = models.DateField(null=True)
+
