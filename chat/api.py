@@ -1,3 +1,4 @@
+import json
 import random
 
 from rest_framework import status
@@ -5,9 +6,7 @@ from rest_framework.generics import get_object_or_404
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from . serializer import *
-
-from validate_email import validate_email
+from .serializer import *
 
 
 def get_user(stuID):
@@ -25,12 +24,7 @@ class ChatList(APIView):
         serializer = ChatSerializer(all_chats, many=True)
         return Response(serializer.data)
 
-    def post(self, request):
-        serializer = ChatSerializer(data=request.data)
-        if serializer.is_valid():
-            serializer.save()
-            return Response(serializer.data, status=status.HTTP_201_CREATED)
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+    # def post(self, request):
 
 
 class ChatDetails(APIView):
@@ -38,9 +32,17 @@ class ChatDetails(APIView):
         user = get_user(stuID)
         if not user:
             return Response(f"User with student_id {stuID} Not Found!", status=status.HTTP_404_NOT_FOUND)
-        contact = get_object_or_404(Contact, user=user)
-        serializer = ChatSerializer(contact.chats().all())
-        return Response(serializer.data)
+
+        try:
+            contact = Contact.objects.get(user=user)
+        except Contact.DoesNotExist:
+            return Response(f"Contact with student_id {stuID} Not Found!", status=status.HTTP_404_NOT_FOUND)
+
+        chats = contact.chats.all()
+        serializer = ChatSerializer(chats, many=True)
+        return serializer.data
+
+
 #
 #     def put(self, request, stuID):
 #         user_to_edit = get_user(stuID)
@@ -71,3 +73,26 @@ class ChatDetails(APIView):
 #             return Response(f"User with student_id {stuID} Not Found!", status=status.HTTP_404_NOT_FOUND)
 #         user_to_delete.delete()
 #         return Response(f"The user with student_id {stuID} has deleted successfully!", status=status.HTTP_204_NO_CONTENT)
+
+
+class ContactList(APIView):
+    def get(self, request):
+        all_contacts = Contact.objects.all()
+        serializer = ContactSerializer(all_contacts, many=True)
+        return Response(serializer.data)
+
+    def post(self, request):
+        serializer = ContactSerializer(data=request.data)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+# class ContactDetails(APIView):
+#     def get(self, request, stuID):
+#         user = get_user(stuID)
+#         if not user:
+#             return Response(f"User with student_id {stuID} Not Found!", status=status.HTTP_404_NOT_FOUND)
+#         contact = get_object_or_404(Contact, user=user)
+#         serializer = ChatSerializer(contact.chats().all())
+#         return Response(serializer.data)
