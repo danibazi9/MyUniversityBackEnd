@@ -3,28 +3,31 @@ from MyUniversity.models import User
 
 
 # Create your models here.
-class ChatRoom(models.Model):
-    title = models.CharField(max_length=255, unique=True, blank=False)
-    user = models.OneToOneField(User, on_delete=models.CASCADE)
+class Contact(models.Model):
+    user = models.ForeignKey(User, related_name='friends', on_delete=models.CASCADE, unique=True)
+    friends = models.ManyToManyField('self', blank=True)
 
     def __str__(self):
-        return self.title
+        return self.user.first_name + " " + self.user.last_name + ", " + str(self.user.student_id)
 
 
-class ChatMessageManager(models.Manager):
-    def by_room(self, room):
-        qs = ChatMessage.objects.filter(room=room).order_by("-timestamp")
-        return qs
-
-
-class ChatMessage(models.Model):
+class Message(models.Model):
     # Chat message created by the user inside a ChatRoom (Foreign key)
-    user = models.ForeignKey(User, on_delete=models.CASCADE)
-    room = models.ForeignKey(ChatRoom, on_delete=models.CASCADE)
-    timestamp = models.DateTimeField(auto_now_add=True)
+    contact = models.ForeignKey(Contact, related_name='messages', on_delete=models.CASCADE)
     content = models.TextField(unique=False, blank=False)
-
-    objects = ChatMessageManager()
+    timestamp = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
-        return self.content
+        return self.contact.user.first_name + " " + self.contact.user.last_name + ": " + self.content
+
+
+class Chat(models.Model):
+    title = models.CharField(max_length=30)
+    user = models.ManyToManyField(Contact, related_name='chats')
+    messages = models.ManyToManyField(Message, blank=True)
+
+    def last_10_messages(self):
+        return self.messages.objects.order_by('-timestamp').all()[:10]
+
+    def __str__(self):
+        return str(self.id) + " " + self.title
