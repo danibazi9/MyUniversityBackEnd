@@ -8,15 +8,15 @@ from chat.models import *
 
 
 class ChatRoomAdmin(admin.ModelAdmin):
-    list_display = ['id', 'title']
-    search_fields = ['id', 'title']
-    list_filter = ['id']
+    list_display = ['title', 'id']
+    search_fields = ['title', 'user', 'id']
+    list_filter = ['title', 'id']
 
     class Meta:
-        model = ChatRoom
+        model = Chat
 
 
-admin.site.register(ChatRoom, ChatRoomAdmin)
+admin.site.register(Chat, ChatRoomAdmin)
 
 
 class CachingPaginator(Paginator):
@@ -41,16 +41,27 @@ class CachingPaginator(Paginator):
 
 
 class ChatMessageAdmin(admin.ModelAdmin):
-    list_display = ['room', 'user', 'timestamp', 'content']
-    list_filter = ['room', 'user', 'timestamp']
-    search_fields = ['room__title', 'user__student_id', 'content']
-    readonly_fields = ['id', 'user', 'room', 'timestamp']
+    list_display = ['contact', 'content', 'timestamp']
+    list_filter = ['contact', 'timestamp']
+    search_fields = ['contact__friends', 'content']
 
     show_full_result_count = False
     paginator = CachingPaginator
 
     class Meta:
-        model = ChatMessages
+        model = Message
 
 
-admin.site.register(ChatMessages, ChatMessageAdmin)
+admin.site.register(Message, ChatMessageAdmin)
+
+
+class ContactAdmin(admin.ModelAdmin):
+    list_display = ['user']
+    list_filter = ['user']
+    search_fields = ['user']
+
+    class Meta:
+        model = Contact
+
+
+admin.site.register(Contact, ContactAdmin)
