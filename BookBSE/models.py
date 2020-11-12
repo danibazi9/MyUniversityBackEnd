@@ -1,4 +1,5 @@
 from django.db import models
+from account.models import Account
 
 # Create your models here.
 class Faculty(models.Model):
@@ -27,3 +28,20 @@ class Book(models.Model):
 
     def __str__(self):
         return f"Name: {self.name}; Author: {self.author}; Publisher: {self.publisher}"
+
+class Stock(models.Model):
+    book = models.ForeignKey(Book, on_delete=models.CASCADE)
+    edition = models.IntegerField()
+    printno = models.IntegerField()
+    image = models.ImageField(upload_to='images/')
+    price = models.IntegerField()
+
+    seller = models.ForeignKey(Account, on_delete=models.CASCADE)
+    upload = models.DateTimeField(auto_now_add=True)
+    update = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        unique_together = ('book', 'seller')
+
+    def __str__(self):
+        return f"Book: {self.book.__str__()}; Seller: {self.seller.__str__()}"
