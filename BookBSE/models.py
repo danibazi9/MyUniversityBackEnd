@@ -45,3 +45,25 @@ class Stock(models.Model):
 
     def __str__(self):
         return f"Book: {self.book.__str__()}; Seller: {self.seller.__str__()}"
+
+class Trade(models.Model):
+    book = models.ForeignKey(Book, on_delete=models.CASCADE)
+    edition = models.IntegerField()
+    printno = models.IntegerField()
+    image = models.ImageField(upload_to='images/')
+    price = models.IntegerField()
+
+    seller = models.ForeignKey(Account, on_delete=models.CASCADE, related_name='seller')
+    buyer = models.ForeignKey(Account, on_delete=models.CASCADE, related_name='buyer')
+    upload = models.DateTimeField()
+    update = models.DateTimeField()
+    reserve = models.DateTimeField(auto_now_add=True)
+    trade = models.DateTimeField()
+    state = models.BooleanField(default=False)
+
+    class Meta:
+        unique_together = ('book', 'seller', 'buyer')
+
+    def __str__(self):
+        return f"Book: {self.book.__str__()}; Seller: {self.seller.__str__()}; Buyer: {self.buyer.__str__()}"
+
