@@ -13,3 +13,17 @@ class Field(models.Model):
 
     def __str__(self):
         return f"Faculty: {self.faculty.name}; Field: {self.name}"
+
+class Book(models.Model):
+    name = models.CharField(max_length=255)
+    author = models.CharField(max_length=50)
+    publisher = models.CharField(max_length=50)
+
+    faculty = models.ForeignKey(Faculty, on_delete=models.CASCADE)
+    field = models.ForeignKey(Field, on_delete=models.CASCADE)
+
+    class Meta:
+        unique_together = ('name', 'author', 'publisher')
+
+    def __str__(self):
+        return f"Name: {self.name}; Author: {self.author}; Publisher: {self.publisher}"
