@@ -7,16 +7,16 @@ from chat.models import *
 # Register your models here.
 
 
-class ChatRoomAdmin(admin.ModelAdmin):
-    list_display = ['title', 'id']
-    search_fields = ['title', 'user', 'id']
-    list_filter = ['title', 'id']
+class RoomAdmin(admin.ModelAdmin):
+    list_display = ['room_id', 'first_user_id', 'second_user_id']
+    search_fields = ['room_id', 'first_user_id__username', 'second_user_id__username']
+    list_filter = ['room_id', 'first_user_id__username', 'second_user_id__username']
 
     class Meta:
-        model = Chat
+        model = Room
 
 
-admin.site.register(Chat, ChatRoomAdmin)
+admin.site.register(Room, RoomAdmin)
 
 
 class CachingPaginator(Paginator):
@@ -40,10 +40,10 @@ class CachingPaginator(Paginator):
     count = property(_get_count)
 
 
-class ChatMessageAdmin(admin.ModelAdmin):
-    list_display = ['contact', 'content', 'timestamp']
-    list_filter = ['contact', 'timestamp']
-    search_fields = ['contact__friends', 'content']
+class MessageAdmin(admin.ModelAdmin):
+    list_display = ['room_id', 'sender_id', 'content', 'timestamp']
+    list_filter = ['room_id', 'sender_id__username', 'timestamp']
+    search_fields = ['room_id', 'sender_id__username', 'timestamp']
 
     show_full_result_count = False
     paginator = CachingPaginator
@@ -52,16 +52,4 @@ class ChatMessageAdmin(admin.ModelAdmin):
         model = Message
 
 
-admin.site.register(Message, ChatMessageAdmin)
-
-
-class ContactAdmin(admin.ModelAdmin):
-    list_display = ['user']
-    list_filter = ['user']
-    search_fields = ['user']
-
-    class Meta:
-        model = Contact
-
-
-admin.site.register(Contact, ContactAdmin)
+admin.site.register(Message, MessageAdmin)
