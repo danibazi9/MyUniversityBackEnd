@@ -1,8 +1,8 @@
 from rest_framework import status
 from rest_framework.views import APIView
 from rest_framework.response import Response
-# from rest_framework.decorators import api_view, permission_classes
-# from rest_framework.permissions import IsAuthenticated
+from rest_framework.decorators import permission_classes
+from rest_framework.permissions import IsAuthenticated
 from BookBSE.models import *
 from BookBSE.api.serializer import *
 from django.db.models import Q
@@ -48,10 +48,10 @@ class Books(APIView):
                     book = Book.objects.get(id=bookID)
                 except:
                     book = None
-                print("="*125, f"\nBook = {book}\n", "="*125)
+                # print("="*125, f"\nBook = {book}\n", "="*125)
                 if book != None:
                     serializer = BookSerializer(book)
-                    print("=" * 125, f"\nBookSerializerData = {serializer.data}\n", "=" * 125)
+                    # print("=" * 125, f"\nBookSerializerData = {serializer.data}\n", "=" * 125)
                     return Response(serializer.data, status=status.HTTP_200_OK)
                 else:
                     return Response(f"Book.BookID: {bookID}, NOT FOUND", status=status.HTTP_404_NOT_FOUND)
@@ -129,3 +129,44 @@ class Books(APIView):
             return Response(f"BookID: {bookID}, DELETED", status=status.HTTP_204_NO_CONTENT)
         else:
             return Response("BookID: None, BAD REQUEST ", status=status.HTTP_400_BAD_REQUEST)
+
+@permission_classes((IsAuthenticated,))
+class Stocks(APIView):
+    def get(self, arg):
+        try:
+            userID = self.request.user.user_id
+        except:
+            return Response(f"UserID: None, BAD REQUEST", status=status.HTTP_400_BAD_REQUEST)
+        state = self.request.query_params.get('state', None)
+        if (state == 'sell'):
+            stocks = Stock.objects.filter(seller=userID)
+            serializer = StockSerializer(stocks, many=True)
+            return Response(serializer.data, status=status.HTTP_200_OK)
+        elif (state == 'buy'):
+            stocks = Stock.objects.exclude(seller_id=userID)
+            serializer = StockSerializer(stocks, many=True)
+            return Response(serializer.data)
+        elif (state == 'all'):
+            stocks = Stock.objects.all()
+            serializer = StockSerializer(stocks, many=True)
+            return Response(serializer.data)
+        else:
+            stockID = self.request.query_params.get('stockID', None)
+            if (stockID != None):
+                stock = Stock.objects.get(id=stockID)
+                serializer = StockSerializer(stock)
+                return Response(serializer.data)
+            else:
+                return Response(f"SellerID: None OR BookID: None, BAD REQUEST", status=status.HTTP_400_BAD_REQUEST)
+
+    # def post(self, arg):
+    #     user = self.request.user
+    #     serializer = StockSerializer(data=self.request.data)
+    #     if (serializer.is_valid()):
+    #         print("="*50, f"\n{serializer}\n", "="*50)
+    #         serializer.save()
+    #         print("="*50, "\nDONE\n", "="*50)
+    #         return Response(serializer.data, status=status.HTTP_201_CREATED)
+    #     else:
+    #         return Response(f"INVALID REQUEST\n{serializer.errors}", status=status.HTTP_400_BAD_REQUEST)
+    #     # return Response(status=status.HTTP_200_OK)
