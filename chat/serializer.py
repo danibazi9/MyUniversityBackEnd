@@ -1,32 +1,23 @@
 from django.db.models.functions import datetime
 from rest_framework import serializers
 
-from MyUniversity.serializer import UserSerializer
 from chat.models import *
 from MyUniversity.models import *
 
 
-class ContactSerializer(serializers.ModelSerializer):
-    user = serializers.StringRelatedField(read_only=True)
-    friends = serializers.StringRelatedField(read_only=True, many=True)
+class RoomSerializer(serializers.ModelSerializer):
+    first_user_id = serializers.StringRelatedField(read_only=True)
+    second_user_id = serializers.StringRelatedField(read_only=True)
 
     class Meta:
-        model = Contact
-        fields = ('user', 'friends')
+        model = Room
+        fields = ('room_id', 'first_user_id', 'second_user_id')
 
 
 class MessageSerializer(serializers.ModelSerializer):
-    contact = serializers.StringRelatedField(read_only=True)
+    sender_id = serializers.StringRelatedField(read_only=True)
     timestamp = serializers.DateTimeField(format="%Y-%m-%d %H:%M:%S")
 
     class Meta:
         model = Message
-        fields = ('contact', 'content', 'timestamp')
-
-
-class ChatSerializer(serializers.ModelSerializer):
-    messages = MessageSerializer(read_only=True, many=True)
-
-    class Meta:
-        model = Chat
-        fields = ('title', 'messages')
+        fields = ('room_id', 'sender_id', 'content', 'timestamp')
