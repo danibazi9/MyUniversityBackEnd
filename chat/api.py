@@ -46,6 +46,8 @@ class ChatList(APIView):
 
             try:
                 receiver_contact = Contact.objects.get(user__student_id=receiver_stuID)
+                if receiver_contact:
+                    return Response("This chatroom has already exists!", status=status.HTTP_302_FOUND)
             except Contact.DoesNotExist:
                 receiver_contact = Contact.objects.create(user=receiver_user)
                 receiver_contact.save()
