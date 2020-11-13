@@ -1,6 +1,6 @@
 from django.urls import path
 
-from account.api.views import registration_view, update_account_view, account_properties_view, SendEmail
+from account.api.views import *
 from rest_framework.authtoken.views import obtain_auth_token
 
 app_name = 'account'
@@ -11,4 +11,5 @@ urlpatterns = [
     path('login', obtain_auth_token, name='login'),
     path('properties', account_properties_view, name="properties"),
     path('send-email', SendEmail.as_view()),
+    path('properties/all', all_acounts_view, name="properties_all"),
 ]
