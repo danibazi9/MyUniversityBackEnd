@@ -10,4 +10,5 @@ urlpatterns = [
     path('api/send-email/<int:stuID>', api.SendEmail.as_view()),
     path('api/chat/', include('chat.urls')),
     path('api/account/', include('account.api.urls', 'account_api')),
+    path('api/bookbse/', include('BookBSE.api.urls')),
 ]
