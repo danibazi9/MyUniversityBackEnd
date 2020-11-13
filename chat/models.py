@@ -4,31 +4,25 @@ from account.models import Account
 
 
 # Create your models here.
-class Contact(models.Model):
-    user = models.OneToOneField(Account, related_name='friends', on_delete=models.CASCADE)
-    friends = models.ManyToManyField('self', blank=True)
+class Room(models.Model):
+    room_id = models.AutoField(primary_key=True)
+    first_user_id = models.ForeignKey(Account, related_name='user1', on_delete=models.CASCADE)
+    second_user_id = models.ForeignKey(Account, related_name='user2', on_delete=models.CASCADE)
 
     def __str__(self):
-        return self.user.username + " " + str(self.user.student_id)
+        return "ID: " + str(self.room_id) + \
+               " With: " + self.first_user_id.username + " + " + self.second_user_id.username
 
 
 class Message(models.Model):
     # Chat message created by the user inside a ChatRoom (Foreign key)
-    contact = models.ForeignKey(Contact, related_name='messages', on_delete=models.CASCADE)
+    room_id = models.ForeignKey(Room, related_name='message', on_delete=models.CASCADE)
+    sender_id = models.ForeignKey(Account, related_name='sender', on_delete=models.CASCADE)
     content = models.TextField(unique=False, blank=False)
     timestamp = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
-        return self.contact.user.username + ": " + self.content
+        return self.sender_id.username + ": " + self.content
 
-
-class Chat(models.Model):
-    title = models.CharField(max_length=30)
-    user = models.ManyToManyField(Contact, related_name='chats')
-    messages = models.ManyToManyField(Message, blank=True)
-
-    def last_10_messages(self):
-        return self.messages.objects.order_by('-timestamp').all()[:10]
-
-    def __str__(self):
-        return "ID: " + str(self.id) + " Title: " + self.title
+    def last_30_messages(self):
+        return Message.objects.order_by('-timestamp').all()[:10]
