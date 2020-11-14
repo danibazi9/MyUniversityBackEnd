@@ -2,6 +2,7 @@ from django.urls import path, include
 from rest_framework.urlpatterns import format_suffix_patterns
 
 from . import api
+import chat.api
 
 app_name = 'MyUniversity'
 urlpatterns = [
@@ -10,4 +11,5 @@ urlpatterns = [
     path('api/send-email/<int:stuID>', api.SendEmail.as_view()),
     path('api/chat/', include('chat.urls')),
     path('api/account/', include('account.api.urls', 'account_api')),
+    path('api/room-list/', chat.api.chat_properties_view, name='chat'),
 ]
