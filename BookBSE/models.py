@@ -79,3 +79,12 @@ class Demand(models.Model):
 
     def __str__(self):
         return f"Book: {self.book.__str__()}; Seller: {self.seller.__str__()}; Client: {self.client.__str__()}"
+
+class ReportProblem(models.Model):
+    accuser = models.ForeignKey(Account, on_delete=models.CASCADE, related_name='accuser')
+    accused = models.ForeignKey(Account, on_delete=models.CASCADE, related_name='accused')
+    trade = models.ForeignKey(Trade, on_delete=models.CASCADE)
+    text = models.CharField(max_length=1024)
+
+    def __str__(self):
+        return f"Accuser: {self.accuser.__str__()}, Accused: {self.accused.__str__()}, Trade: {self.trade.__str__()}"
