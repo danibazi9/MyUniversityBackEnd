@@ -51,7 +51,7 @@ class Trade(models.Model):
     book = models.ForeignKey(Book, on_delete=models.CASCADE)
     edition = models.IntegerField()
     printno = models.IntegerField()
-    image = models.ImageField(upload_to='images/')
+    image = models.ImageField(upload_to='images/', blank=True)
     price = models.IntegerField()
     description = models.CharField(max_length=1024, null=True)
 
@@ -60,7 +60,7 @@ class Trade(models.Model):
     upload = models.DateTimeField()
     update = models.DateTimeField()
     reserve = models.DateTimeField(auto_now_add=True)
-    trade = models.DateTimeField()
+    trade = models.DateTimeField(blank=True, null=True)
     state = models.BooleanField(default=False)
 
     class Meta:
@@ -85,6 +85,9 @@ class ReportProblem(models.Model):
     accused = models.ForeignKey(Account, on_delete=models.CASCADE, related_name='accused')
     trade = models.ForeignKey(Trade, on_delete=models.CASCADE)
     text = models.CharField(max_length=1024)
+
+    class Meta:
+        unique_together = ('accuser', 'accused', 'trade')
 
     def __str__(self):
         return f"Accuser: {self.accuser.__str__()}, Accused: {self.accused.__str__()}, Trade: {self.trade.__str__()}"
