@@ -35,6 +35,7 @@ class Stock(models.Model):
     printno = models.IntegerField()
     image = models.ImageField(upload_to='images/', blank=True)
     price = models.IntegerField()
+    description = models.CharField(max_length=1024, null=True)
 
     seller = models.ForeignKey(Account, on_delete=models.CASCADE)
     upload = models.DateTimeField(auto_now_add=True)
@@ -52,6 +53,7 @@ class Trade(models.Model):
     printno = models.IntegerField()
     image = models.ImageField(upload_to='images/')
     price = models.IntegerField()
+    description = models.CharField(max_length=1024, null=True)
 
     seller = models.ForeignKey(Account, on_delete=models.CASCADE, related_name='seller')
     buyer = models.ForeignKey(Account, on_delete=models.CASCADE, related_name='buyer')
