@@ -16,6 +16,7 @@ import random
 def registration_view(request):
     serializer = RegistrationSerializer(data=request.data)
     data = {}
+    print(serializer)
     if serializer.is_valid():
         email = request.data['email']
         if validate_email(serializer.validated_data.get('email')):
@@ -34,7 +35,7 @@ def registration_view(request):
             return Response(f"The email '{serializer['email'].value}' doesn't exist",
                             status=status.HTTP_406_NOT_ACCEPTABLE)
     else:
-        return Response(f"The email '{serializer['email'].value}' doesn't exist",
+        return Response(f"Not acceptable",
                         status=status.HTTP_406_NOT_ACCEPTABLE)
 
 
@@ -50,11 +51,20 @@ def account_properties_view(request):
         return Response(serializer.data)
 
 
+@api_view(['GET', ])
+def all_accounts(request):
+    users = Account.objects.all()
+    serializer = AccountPropertiesSerializer(users, many=True)
+    print(users)
+    return Response(serializer.data)
+
+
 @api_view(['PUT', ])
 @permission_classes((IsAuthenticated,))
 def update_account_view(request):
     try:
         account = request.user
+        print(account.email)
     except Account.DoesNotExist:
         return Response(status=status.HTTP_404_NOT_FOUND)
 
