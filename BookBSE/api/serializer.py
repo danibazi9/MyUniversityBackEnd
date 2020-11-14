@@ -52,5 +52,7 @@ class TradeSerializer(serializers.ModelSerializer):
         model = Trade
         fields = '__all__'
 
-
-
+class ReportProblemSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = ReportProblem
+        fields = '__all__'
