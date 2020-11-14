@@ -221,3 +221,116 @@ class Stocks(APIView):
                 return Response(f"StockID={stockID}, NOT FOUND", status=status.HTTP_404_NOT_FOUND)
         else:
             return Response("StockID: None, BAD REQUEST", status=status.HTTP_400_BAD_REQUEST)
+
+@permission_classes((IsAuthenticated,))
+class Demands(APIView):
+    def get(self, arg):
+        state = self.request.query_params.get('state', None)
+        if state != None:
+            try:
+                user = self.request.user
+            except:
+                return Response(f"UserID: None, BAD REQUEST", status=status.HTTP_400_BAD_REQUEST)
+            if state == 'client':
+                sellers = Demand.objects.filter(client=user)
+                serializer = DemandSerializer(sellers, many=True)
+                return Response(serializer.data, status=status.HTTP_200_OK)
+            elif state == 'seller':
+                applicants = Demand.objects.filter(seller=user)
+                serializer = DemandSerializer(applicants, many=True)
+                return Response(serializer.data, status=status.HTTP_200_OK)
+            elif state == 'all':
+                demands = Demand.objects.all()
+                serializer = DemandSerializer(demands, many=True)
+                return Response(serializer.data, status=status.HTTP_200_OK)
+            else:
+                return Response(f"INVALID State: {state}, BAD REQUEST", status=status.HTTP_400_BAD_REQUEST)
+        else:
+            return Response(f"State: None, BAD REQUEST", status=status.HTTP_400_BAD_REQUEST)
+
+    def post(self, arg):
+        user = self.request.user
+        serializer = DemandSerializer(data=self.request.data)
+        if serializer.is_valid():
+            if serializer.validated_data['client'] == user:
+                serializer.save()
+                return Response(serializer.data, status=status.HTTP_201_CREATED)
+            else:
+                return Response("ACCESS DENIED", status=status.HTTP_403_FORBIDDEN)
+        else:
+            return Response(f"{serializer.errors}, BAD REQUEST", status=status.HTTP_400_BAD_REQUEST)
+
+    def delete(self, arg):
+        demandID = self.request.query_params.get('demandID', None)
+        user = self.request.user
+        if demandID != None:
+            try:
+                demand = Demand.objects.get(id=demandID)
+            except:
+                demand = None
+            if demand != None:
+                if (demand.seller == user or
+                    demand.client == user):
+                    demand.delete()
+                    return Response(f"DemandID: {demandID}, DELETED", status=status.HTTP_204_NO_CONTENT)
+                else:
+                    return Response("ACCESS DENIED", status=status.HTTP_403_FORBIDDEN)
+            else:
+                return Response(f"DemandID={demandID}, NOT FOUND", status=status.HTTP_404_NOT_FOUND)
+
+        bookID = self.request.query_params.get('bookID', None)
+        state = self.request.query_params.get('state', None)
+        if (bookID != None and state != None):
+            try:
+                book = Book.objects.get(id=bookID)
+            except:
+                book = None
+            if book != None:
+                if state == 'seller':
+                    try:
+                        demands = Demand.objects.filter(seller=user, book=bookID)
+                    except:
+                        demands = None
+                    if demands != None:
+                        demands.delete()
+                        return Response(f"Demands, Seller: {user} AND Book: {bookID}, DELETED",
+                                        status=status.HTTP_204_NO_CONTENT)
+                    else:
+                        return Response(f"Demands, Seller: {user} AND Book: {bookID}, NOT FOUND",
+                                        status=status.HTTP_404_NOT_FOUND)
+                elif state == 'client':
+                    try:
+                        demands = Demand.objects.filter(client=user, book=bookID)
+                    except:
+                        demands = None
+                    if demands != None:
+                        demands.delete()
+                        return Response(f"Demands, Client: {user} AND Book: {bookID}, DELETED",
+                                        status=status.HTTP_204_NO_CONTENT)
+                    else:
+                        return Response(f"Demands, Seller: {user} AND Book: {bookID}, NOT FOUND",
+                                        status=status.HTTP_404_NOT_FOUND)
+                elif state == 'all':
+                    try:
+                        demands = Demand.objects.filter(Q(client=user) | Q(seller=user), book=bookID)
+                    except:
+                        demands = None
+                    if demands != None:
+                        demands.delete()
+                        return Response(f"Demands, Seller/Client: {user}, DELETED",
+                                        status=status.HTTP_204_NO_CONTENT)
+                    else:
+                        return Response(f"Demands, Seller: {user} AND Book: {bookID}, NOT FOUND",
+                                        status=status.HTTP_404_NOT_FOUND)
+                else:
+                    return Response(f"INVALID State: {state}, BAD REQUEST", status=status.HTTP_400_BAD_REQUEST)
+            elif (bookID == None and state == 'all'):
+                demands = Demand.objects.filter(Q(client=user) | Q(seller=user))
+                demands.delete()
+                return Response(f"Demands, Seller/Client: {user}, DELETED",
+                                status=status.HTTP_204_NO_CONTENT)
+            else:
+                return Response(f"BookID={bookID}, NOT FOUND", status=status.HTTP_404_NOT_FOUND)
+        else:
+            return Response("(DemandID: None) OR (BookID: None OR State: None), BAD REQUEST",
+                            status=status.HTTP_400_BAD_REQUEST)

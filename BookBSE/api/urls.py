@@ -6,4 +6,5 @@ urlpatterns = [
     path('fields/', views.Fields.as_view()),
     path('books/', views.Books.as_view()),
     path('stocks/', views.Stocks.as_view()),
+    path('demands/', views.Demands.as_view()),
 ]
