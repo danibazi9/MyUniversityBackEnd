@@ -38,7 +38,6 @@ class Fields(APIView):
         else:
             return Response("Faculty: None, BAD REQUEST ", status=status.HTTP_400_BAD_REQUEST)
 
-
 class Books(APIView):
     def get(self, arg):
         bookID = self.request.query_params.get('bookID', None)
@@ -147,7 +146,7 @@ class Stocks(APIView):
             serializer = StockSerializer(stocks, many=True)
             return Response(serializer.data)
         elif (state == 'all'):
-            stocks = Stock.objects.all()
+            stocks = Stock.objects.all() # .prefetch_related('book')
             serializer = StockSerializer(stocks, many=True)
             return Response(serializer.data)
         else:
@@ -334,3 +333,282 @@ class Demands(APIView):
         else:
             return Response("(DemandID: None) OR (BookID: None OR State: None), BAD REQUEST",
                             status=status.HTTP_400_BAD_REQUEST)
+
+@permission_classes((IsAuthenticated,))
+class Trades(APIView):
+    def get(self, arg):
+        user = self.request.user
+        tradeID = self.request.query_params.get('tradeID', None)
+        if tradeID != None:
+            try:
+                trade = Trade.objects.get(id=tradeID)
+            except:
+                trade = None
+            if trade != None:
+                if (trade.seller == user or trade.buyer == user):
+                    serializer = TradeSerializer(trade)
+                    return Response(serializer.data, status=status.HTTP_200_OK)
+                else:
+                    return Response("ACCESS DENIED", status=status.HTTP_403_FORBIDDEN)
+            else:
+                return Response(f"TradeID: {tradeID}, NOT FOUND", status= status.HTTP_404_NOT_FOUND)
+        else:
+            state = self.request.query_params.get('state', None)
+            if state != None:
+                if state == 'seller':
+                    sells = Trade.objects.filter(seller=user)
+                    serializer = TradeSerializer(sells, many=True)
+                    return Response(serializer.data, status=status.HTTP_200_OK)
+                elif state == 'buyer':
+                    buies = Trade.objects.filter(buyer=user)
+                    serializer = TradeSerializer(buies, many=True)
+                    return Response(serializer.data, status=status.HTTP_200_OK)
+                elif state == 'all':
+                    trades = Trade.objects.filter(Q(seller=user) | Q(buyer=user))
+                    serializer = TradeSerializer(trades, many=True)
+                    return Response(serializer.data, status=status.HTTP_200_OK)
+                else:
+                    return Response(f"INVALID State: {state}, BAD REQUEST", status=status.HTTP_400_BAD_REQUEST)
+            else:
+                return Response("State: None OR TradeID: None, BAD REQUEST", status=status.HTTP_400_BAD_REQUEST)
+
+    def post(self, arg):
+        serializer = TradeSerializer(data=self.request.data)
+        user = self.request.user
+        if serializer.is_valid():
+            sellerID = serializer.validated_data['seller']
+            bookID = serializer.validated_data['book']
+
+            if sellerID == user:
+                try:
+                    clients = Demand.objects.filter(seller=sellerID, book=bookID)
+                    clients.delete()
+                except:
+                    print(f"Clients, Seller: {sellerID}, Book: {bookID}, NOT FOUND")
+                try:
+                    stock = Stock.objects.get(seller=sellerID, book=bookID)
+                    stock.delete()
+                except:
+                    print(f"Clients, Seller: {sellerID}, Book: {bookID}, NOT FOUND")
+                serializer.save()
+                return Response(serializer.data, status=status.HTTP_200_OK)
+            else:
+                return Response("ACCESS DENIED", status=status.HTTP_403_FORBIDDEN)
+        else:
+            return Response(f"{serializer.errors}, BAD REQUEST", status=status.HTTP_400_BAD_REQUEST)
+
+    def put(self, arg):
+        tradeID = self.request.query_params.get('tradeID', None)
+        if tradeID != None:
+            try:
+                trade = Trade.objects.get(id=tradeID)
+            except:
+                trade = None
+            if trade != None:
+                serializer = TradeSerializer(trade, data=self.request.data)
+                user = self.request.user
+                if serializer.is_valid():
+                    if serializer.validated_data['seller'] == user:
+                        if trade.state == False:
+                            if (serializer.validated_data['state'] == True and serializer.validated_data['trade'] != None):
+                                trade.state = serializer.validated_data['state']
+                                trade.trade = serializer.validated_data['trade']
+                                trade.description = serializer.validated_data['description']
+                                trade.save()
+                                return Response(serializer.data, status=status.HTTP_200_OK)
+                            else:
+                                return Response(f"NO CHANGES APPLIED", status=status.HTTP_200_OK)
+                        else:
+                            return Response("ACCESS DENIED, TRADE DONE", status=status.HTTP_403_FORBIDDEN)
+                    else:
+                        return Response("ACCESS DENIED", status=status.HTTP_403_FORBIDDEN)
+                else:
+                    return Response(f"{serializer.errors}, BAD REQUEST", status= status.HTTP_400_BAD_REQUEST)
+            else:
+                return Response(f"TradeID={tradeID}, NOT FOUND", status=status.HTTP_404_NOT_FOUND)
+        else:
+            return Response("TradeID: None, BAD REQUEST", status=status.HTTP_400_BAD_REQUEST)
+
+    def delete(self, arg):
+        tradeID = self.request.query_params.get('tradeID', None)
+        if tradeID != None:
+            try:
+                trade = Trade.objects.get(id=tradeID)
+            except:
+                trade = None
+            if trade != None:
+                user = self.request.user
+                if trade.seller == user:
+                    if trade.state == False:
+                        trade.delete()
+                        return Response(f"Trade: {tradeID}, DELETED", status=status.HTTP_204_NO_CONTENT)
+                    else:
+                        return Response("ACCESS DENIED, TRADE DONE", status=status.HTTP_403_FORBIDDEN)
+                else:
+                    return Response("ACCESS DENIED", status=status.HTTP_403_FORBIDDEN)
+            else:
+                return Response(f"TradeID={tradeID}, NOT FOUND", status=status.HTTP_404_NOT_FOUND)
+        else:
+            return Response("TradeID: None, BAD REQUEST", status=status.HTTP_400_BAD_REQUEST)
+
+@permission_classes((IsAuthenticated,))
+class Histories(APIView):
+    def get(self, arg):
+        state = self.request.query_params.get('state', None)
+        user = self.request.user
+        if state != None:
+            if state == 'all':
+                try:
+                    trades = Trade.objects.filter(Q(seller=user) | Q(buyer=user), state=True)
+                except:
+                    trades = None
+                if trades != None:
+                    serializer = TradeSerializer(trades, many=True)
+                    return Response(serializer.data, status=status.HTTP_200_OK)
+                else:
+                    return Response(f"Trades, Seller/Buyer: {user}, NOT FOUND", status=status.HTTP_404_NOT_FOUND)
+            elif state == 'seller':
+                try:
+                    trades = Trade.objects.filter(seller=user, state=True)
+                except:
+                    trades = None
+                if trades != None:
+                    serializer = TradeSerializer(trades, many=True)
+                    return Response(serializer.data, status=status.HTTP_200_OK)
+                else:
+                    return Response(f"Trades, Seller/Buyer: {user}, NOT FOUND", status=status.HTTP_404_NOT_FOUND)
+            elif state == 'buyer':
+                try:
+                    trades = Trade.objects.filter(buyer=user, state=True)
+                except:
+                    trades = None
+                if trades != None:
+                    serializer = TradeSerializer(trades, many=True)
+                    return Response(serializer.data, status=status.HTTP_200_OK)
+                else:
+                    return Response(f"Trades, Seller/Buyer: {user}, NOT FOUND", status=status.HTTP_404_NOT_FOUND)
+        else:
+            return Response("State: None, BAD REQUEST", status=status.HTTP_400_BAD_REQUEST)
+
+@permission_classes((IsAuthenticated,))
+class ReportProblems(APIView):
+    def get(self, arg):
+        user = self.request.user
+        reportID = self.request.query_params.get('reportID', None)
+        if reportID != None:
+            try:
+                report = ReportProblem.objects.get(id=reportID)
+                if (report.accuser == user or report.accused):
+                    serializer = ReportProblemSerializer(report)
+                    return Response(serializer.data, status=status.HTTP_200_OK)
+                else:
+                    return Response("ACCESS DENIED", status=status.HTTP_403_FORBIDDEN)
+            except:
+                return Response(f"ReportProblem: {reportID}, NOT FOUND", status=status.HTTP_404_NOT_FOUND)
+        else:
+            state = self.request.query_params.get('state', None)
+            if state != None:
+                if state == 'all':
+                    try:
+                        reports = ReportProblem.objects.filter(Q(accuser=user) | Q(accused=user))
+                    except:
+                        reports = None
+                    if reports != None:
+                        serializer = ReportProblemSerializer(reports, many=True)
+                        return Response(serializer.data, status=status.HTTP_200_OK)
+                    else:
+                        return Response(f"Reports, Accuser/Accused: {user}, NOT FOUND", status=status.HTTP_404_NOT_FOUND)
+                elif state == 'accuser':
+                    try:
+                        reports = ReportProblem.objects.filter(accuser=user)
+                    except:
+                        reports = None
+                    if reports != None:
+                        serializer = ReportProblemSerializer(reports, many=True)
+                        return Response(serializer.data, status=status.HTTP_200_OK)
+                    else:
+                        return Response(f"Reports, Accuser: {user}, NOT FOUND", status=status.HTTP_404_NOT_FOUND)
+                elif state == 'accused':
+                    try:
+                        reports = ReportProblem.objects.filter(accused=user)
+                    except:
+                        reports = None
+                    if reports != None:
+                        serializer = ReportProblemSerializer(reports, many=True)
+                        return Response(serializer.data, status=status.HTTP_200_OK)
+                    else:
+                        return Response(f"Reports, Accused: {user}, NOT FOUND", status=status.HTTP_404_NOT_FOUND)
+            else:
+                return Response("State: None, BAD REQUEST", status=status.HTTP_400_BAD_REQUEST)
+
+    def post(self, arg):
+        tradeID = self.request.query_params.get('tradeID', None)
+        user = self.request.user
+
+        if tradeID != None:
+            try:
+                trade = Trade.objects.get(id=tradeID)
+                # print("="*50 ,f"Trade: {Trade.objects.get(id=tradeID)}")
+                if trade.state == True:
+                    if (trade.seller == user or trade.buyer == user):
+                        serializer = ReportProblemSerializer(data=self.request.data)
+                        # print("=" * 50, f"ENTER")
+                        if serializer.is_valid():
+                            if serializer.validated_data['accuser'] == user:
+                                serializer.save()
+                                return Response(serializer.data, status=status.HTTP_200_OK)
+                            else:
+                                return Response(f"Accuser != Req.User, BAD REQUEST", status=status.HTTP_400_BAD_REQUEST)
+                        else:
+                            return Response(f"{serializer.errors}, BAD REQUEST", status=status.HTTP_400_BAD_REQUEST)
+                    else:
+                        return Response(f"ACCESS DENIED", status=status.HTTP_403_FORBIDDEN)
+                else:
+                    return Response(f"ACCESS DENIED, TRADE DONE", status=status.HTTP_403_FORBIDDEN)
+            except:
+                return Response(f"Trade: {tradeID}, NOT FOUND", status=status.HTTP_404_NOT_FOUND)
+        else:
+            return Response("TradeID: None, BAD REQUEST", status=status.HTTP_400_BAD_REQUEST)
+
+    def put(self, arg):
+        reportID = self.request.query_params.get('reportID', None)
+        user = self.request.user
+
+        if reportID != None:
+            try:
+                report = ReportProblem.objects.get(id=reportID)
+                if report.accuser == user:
+                    serializer = ReportProblemSerializer(report, data=self.request.data)
+                    if serializer.is_valid():
+                        if serializer.validated_data['accuser'] == user:
+                            report.text = serializer.validated_data['text']
+                            report.save()
+                            # print("="*50)
+                            return Response(serializer.data, status=status.HTTP_200_OK)
+                        else:
+                            return Response(f"Accuser != Req.User, BAD REQUEST", status=status.HTTP_400_BAD_REQUEST)
+                    else:
+                        return Response(f"{serializer.errors}, BAD REQUEST", status=status.HTTP_400_BAD_REQUEST)
+                else:
+                    return Response(f"ACCESS DENIED", status=status.HTTP_403_FORBIDDEN)
+            except:
+                return Response(f"Report: {reportID}, NOT FOUND", status=status.HTTP_404_NOT_FOUND)
+        else:
+            return Response("ReportID: None, BAD REQUEST", status=status.HTTP_400_BAD_REQUEST)
+
+    def delete(self, arg):
+        reportID = self.request.query_params.get('reportID', None)
+        user = self.request.user
+
+        if reportID != None:
+            try:
+                report = ReportProblem.objects.get(id=reportID)
+                if report.accuser == user:
+                    report.delete()
+                    return Response(f"Report: {reportID}, DELETED", status=status.HTTP_204_NO_CONTENT)
+                else:
+                    return Response(f"ACCESS DENIED", status=status.HTTP_403_FORBIDDEN)
+            except:
+                return Response(f"Report: {reportID}, NOT FOUND", status=status.HTTP_404_NOT_FOUND)
+        else:
+            return Response("ReportID: None, BAD REQUEST", status=status.HTTP_400_BAD_REQUEST)
