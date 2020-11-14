@@ -157,16 +157,67 @@ class Stocks(APIView):
                 serializer = StockSerializer(stock)
                 return Response(serializer.data)
             else:
-                return Response(f"SellerID: None OR BookID: None, BAD REQUEST", status=status.HTTP_400_BAD_REQUEST)
+                return Response(f"StockID: None, BAD REQUEST", status=status.HTTP_400_BAD_REQUEST)
 
-    # def post(self, arg):
-    #     user = self.request.user
-    #     serializer = StockSerializer(data=self.request.data)
-    #     if (serializer.is_valid()):
-    #         print("="*50, f"\n{serializer}\n", "="*50)
-    #         serializer.save()
-    #         print("="*50, "\nDONE\n", "="*50)
-    #         return Response(serializer.data, status=status.HTTP_201_CREATED)
-    #     else:
-    #         return Response(f"INVALID REQUEST\n{serializer.errors}", status=status.HTTP_400_BAD_REQUEST)
-    #     # return Response(status=status.HTTP_200_OK)
+    def post(self, arg):
+        user = self.request.user
+        # print('='*25, f"\nUserHeader: {user}\n")
+        serializer = StockSerializer(data=self.request.data)
+        # print('='*25, f"\nSerializer: {serializer}\n")
+
+        if (serializer.is_valid()):
+            # print("="*50, f"\n{serializer}\n", "="*50)
+            # print(f"SerializerValidatedData = {serializer.validated_data}")
+            # print(f"SellerREQ: '{serializer.validated_data['seller']}'; UserREQ: '{user}'")
+            if serializer.validated_data['seller'] == user:
+                serializer.save()
+                return Response(serializer.data, status=status.HTTP_201_CREATED)
+            else:
+                return Response("ACCESS DENIED", status=status.HTTP_403_FORBIDDEN)
+        else:
+            return Response(f"{serializer.errors}, BAD REQUEST", status=status.HTTP_400_BAD_REQUEST)
+
+    def put(self, arg):
+        stockID = self.request.query_params.get('stockID', None)
+        if stockID != None:
+            try:
+                stock = Stock.objects.get(id=stockID)
+            except:
+                stock = None
+
+            if stock != None:
+                user = self.request.user
+                print("="*50, f"\nUser: {user}; Stock.Seller: {stock.seller}")
+                if stock.seller == user:
+                    serializer = StockSerializer(stock, data=self.request.data)
+                    if serializer.is_valid():
+                        serializer.save()
+                        return Response(serializer.data, status=status.HTTP_201_CREATED)
+                    else:
+                        return Response(f"{serializer.errors}, BAD REQUEST", status=status.HTTP_400_BAD_REQUEST)
+                else:
+                    return Response("ACCESS DENIED", status=status.HTTP_403_FORBIDDEN)
+            else:
+                return Response(f"StockID={stockID}, NOT FOUND", status=status.HTTP_404_NOT_FOUND)
+        else:
+            return Response("StockID: None, BAD REQUEST", status=status.HTTP_400_BAD_REQUEST)
+
+    def delete(self, arg):
+        stockID = self.request.query_params.get('stockID', None)
+        if stockID != None:
+            try:
+                stock = Stock.objects.get(id=stockID)
+            except:
+                stock = None
+
+            if stock != None:
+                user = self.request.user
+                if stock.seller == user:
+                    stock.delete()
+                    return Response(f"StockID: {stockID}, DELETED", status=status.HTTP_204_NO_CONTENT)
+                else:
+                    return Response("ACCESS DENIED", status=status.HTTP_403_FORBIDDEN)
+            else:
+                return Response(f"StockID={stockID}, NOT FOUND", status=status.HTTP_404_NOT_FOUND)
+        else:
+            return Response("StockID: None, BAD REQUEST", status=status.HTTP_400_BAD_REQUEST)
