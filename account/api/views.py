@@ -3,12 +3,13 @@ from rest_framework.response import Response
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import IsAuthenticated
 from account.api.serializers import *
-from rest_framework.authtoken.models import Token
 from validate_email import validate_email
 from account.models import Account
 from rest_framework.views import APIView
 from django.core.mail import EmailMessage
 from django.template.loader import render_to_string
+from rest_framework.authtoken.views import ObtainAuthToken
+from rest_framework.authtoken.models import Token
 import random
 
 
@@ -24,6 +25,10 @@ def registration_view(request):
                 data['response'] = 'successful'
                 token = Token.objects.get(user=account).key
                 data['token'] = token
+                data['user_id'] = account.user_id
+                data['username'] = account.username
+                data['first_name'] = account.first_name
+                data['last_name'] = account.last_name
                 return Response(data=data, status=status.HTTP_201_CREATED)
             # else:
             #     return Response(f"The email '{serializer['email'].value}' isn't the academical university email",
@@ -54,6 +59,23 @@ def all_acounts_view(request):
     if request.method == 'GET':
         serializer = AccountPropertiesSerializer(acounts, many=True)
         return Response(serializer.data)
+
+
+class TokenObtainView(ObtainAuthToken):
+    def post(self, request, *args, **kwargs):
+        serializer = self.serializer_class(data=request.data,
+                                           context={'request': request})
+        serializer.is_valid(raise_exception=True)
+        user = serializer.validated_data['user']
+        token, created = Token.objects.get_or_create(user=user)
+        custom_response = {
+            'token': token.key,
+            'user_id': user.user_id,
+            'first_name': user.first_name,
+            'last_name': user.last_name,
+            'username': user.username,
+        }
+        return Response(custom_response)
 
 
 @api_view(['PUT', ])
