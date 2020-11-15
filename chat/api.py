@@ -43,9 +43,9 @@ def create_room_view(request):
         return Response("Authentication user Failed!", status=status.HTTP_404_NOT_FOUND)
 
     try:
-        sender = Account.objects.get(username=request.POST['sender_username'])
+        sender = Account.objects.get(user_id=request.POST['user_id'])
     except Account.DoesNotExist:
-        return Response(f"The account with username {request.POST['sender_username']} doesn't exist!",
+        return Response(f"The account with user_id {request.POST['user_id']} doesn't exist!",
                         status=status.HTTP_404_NOT_FOUND)
 
     if request.method == 'POST':
