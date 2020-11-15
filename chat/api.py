@@ -53,7 +53,8 @@ def create_room_view(request):
                Room.objects.filter(first_user_id=sender, second_user_id=account)
         if room:
             serializer = RoomSerializer(room, many=True)
-            return Response(serializer.data, status=status.HTTP_200_OK)
+            data = json.loads(json.dumps(serializer.data))
+            return Response(data[0], status=status.HTTP_200_OK)
         else:
             room = Room.objects.create(first_user_id=account, second_user_id=sender)
             room.save()
