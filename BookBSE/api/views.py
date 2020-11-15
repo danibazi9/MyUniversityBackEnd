@@ -622,13 +622,19 @@ class StocksSO(APIView):
 
         if search != None:
             if orderby == 'asc':
-                stocks = Stock.objects.filter(book__name__icontains=search).order_by('upload')
-                serializer = StockSerializer(stocks, many=True)
-                return Response(serializer.data, status=status.HTTP_200_OK)
+                try:
+                    stocks = Stock.objects.filter(book__name__icontains=search).order_by('upload')
+                    serializer = StockSerializer(stocks, many=True)
+                    return Response(serializer.data, status=status.HTTP_200_OK)
+                except:
+                    return Response(status=status.HTTP_404_NOT_FOUND)
             elif orderby == 'dec':
-                stocks = Stock.objects.filter(book__name__icontains=search).order_by('-upload')
-                serializer = StockSerializer(stocks, many=True)
-                return Response(serializer.data, status=status.HTTP_200_OK)
+                try:
+                    stocks = Stock.objects.filter(book__name__icontains=search).order_by('-upload')
+                    serializer = StockSerializer(stocks, many=True)
+                    return Response(serializer.data, status=status.HTTP_200_OK)
+                except:
+                    return Response(status=status.HTTP_404_NOT_FOUND)
             else:
                 return Response(status=status.HTTP_406_NOT_ACCEPTABLE)
         else:
@@ -642,13 +648,20 @@ class TradesSO(APIView):
 
         if search != None:
             if orderby == 'asc':
-                trades = Trade.objects.filter(book__name__icontains=search).order_by('upload')
-                serializer = StockSerializer(trades, many=True)
-                return Response(serializer.data, status=status.HTTP_200_OK)
+                try:
+                    trades = Trade.objects.filter(book__name__icontains=search).order_by('upload')
+                    serializer = StockSerializer(trades, many=True)
+                    return Response(serializer.data, status=status.HTTP_200_OK)
+                except:
+                    return Response(status=status.HTTP_404_NOT_FOUND)
+
             elif orderby == 'dec':
-                trades = Trade.objects.filter(book__name__icontains=search).order_by('-upload')
-                serializer = StockSerializer(trades, many=True)
-                return Response(serializer.data, status=status.HTTP_200_OK)
+                try:
+                    trades = Trade.objects.filter(book__name__icontains=search).order_by('-upload')
+                    serializer = StockSerializer(trades, many=True)
+                    return Response(serializer.data, status=status.HTTP_200_OK)
+                except:
+                    return Response(status=status.HTTP_404_NOT_FOUND)
             else:
                 return Response(status=status.HTTP_406_NOT_ACCEPTABLE)
         else:
