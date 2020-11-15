@@ -612,3 +612,44 @@ class ReportProblems(APIView):
                 return Response(f"Report: {reportID}, NOT FOUND", status=status.HTTP_404_NOT_FOUND)
         else:
             return Response("ReportID: None, BAD REQUEST", status=status.HTTP_400_BAD_REQUEST)
+
+# =========================================================
+@permission_classes((IsAuthenticated,))
+class StocksSO(APIView):
+    def get(self, arg):
+        search = self.request.query_params.get('search', None)
+        orderby = self.request.query_params.get('orderby', 'asc')
+
+        if search != None:
+            if orderby == 'asc':
+                stocks = Stock.objects.filter(book__name__icontains=search).order_by('upload')
+                serializer = StockSerializer(stocks, many=True)
+                return Response(serializer.data, status=status.HTTP_200_OK)
+            elif orderby == 'dec':
+                stocks = Stock.objects.filter(book__name__icontains=search).order_by('-upload')
+                serializer = StockSerializer(stocks, many=True)
+                return Response(serializer.data, status=status.HTTP_200_OK)
+            else:
+                return Response(status=status.HTTP_406_NOT_ACCEPTABLE)
+        else:
+            return Response("Search: None, BADREQUEST", status=status.HTTP_400_BAD_REQUEST)
+
+@permission_classes((IsAuthenticated,))
+class TradesSO(APIView):
+    def get(self, arg):
+        search = self.request.query_params.get('search', None)
+        orderby = self.request.query_params.get('orderby', 'asc')
+
+        if search != None:
+            if orderby == 'asc':
+                trades = Trade.objects.filter(book__name__icontains=search).order_by('upload')
+                serializer = StockSerializer(trades, many=True)
+                return Response(serializer.data, status=status.HTTP_200_OK)
+            elif orderby == 'dec':
+                trades = Trade.objects.filter(book__name__icontains=search).order_by('-upload')
+                serializer = StockSerializer(trades, many=True)
+                return Response(serializer.data, status=status.HTTP_200_OK)
+            else:
+                return Response(status=status.HTTP_406_NOT_ACCEPTABLE)
+        else:
+            return Response("Search: None, BADREQUEST", status=status.HTTP_400_BAD_REQUEST)
