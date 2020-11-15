@@ -1,6 +1,7 @@
 from django.db import models
 from account.models import Account
 
+
 # Create your models here.
 class Faculty(models.Model):
     name = models.CharField(max_length=125, unique=True)
@@ -8,12 +9,14 @@ class Faculty(models.Model):
     def __str__(self):
         return self.name
 
+
 class Field(models.Model):
     name = models.CharField(max_length=125, unique=True)
     faculty = models.ForeignKey(Faculty, on_delete=models.CASCADE)
 
     def __str__(self):
         return f"Faculty: {self.faculty.name}; Field: {self.name}"
+
 
 class Book(models.Model):
     name = models.CharField(max_length=255)
@@ -28,6 +31,7 @@ class Book(models.Model):
 
     def __str__(self):
         return f"Name: {self.name}; Author: {self.author}; Publisher: {self.publisher}"
+
 
 class Stock(models.Model):
     book = models.ForeignKey(Book, on_delete=models.CASCADE)
@@ -46,6 +50,7 @@ class Stock(models.Model):
 
     def __str__(self):
         return f"Book: {self.book.__str__()}; Seller: {self.seller.__str__()}"
+
 
 class Trade(models.Model):
     book = models.ForeignKey(Book, on_delete=models.CASCADE)
@@ -69,6 +74,7 @@ class Trade(models.Model):
     def __str__(self):
         return f"Book: {self.book.__str__()}; Seller: {self.seller.__str__()}; Buyer: {self.buyer.__str__()}"
 
+
 class Demand(models.Model):
     book = models.ForeignKey(Book, on_delete=models.CASCADE)
     seller = models.ForeignKey(Account, on_delete=models.CASCADE, related_name='DemandSeller')
@@ -79,6 +85,7 @@ class Demand(models.Model):
 
     def __str__(self):
         return f"Book: {self.book.__str__()}; Seller: {self.seller.__str__()}; Client: {self.client.__str__()}"
+
 
 class ReportProblem(models.Model):
     accuser = models.ForeignKey(Account, on_delete=models.CASCADE, related_name='accuser')
