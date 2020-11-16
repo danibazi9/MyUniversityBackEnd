@@ -7,13 +7,14 @@ class RegistrationSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Account
-        fields = ['email', 'username', 'password', 'first_name', 'last_name']
+        fields = ['first_name', 'last_name', 'username', 'email', 'student_id', 'mobile_number', 'password']
 
     def save(self):
         account = Account(
             email=self.validated_data['email'],
             username=self.validated_data['username'],
-            # mobile_number=self['mobile_number'],
+            student_id=self.validated_data['student_id'],
+            mobile_number=self.validated_data['mobile_number'],
             first_name=self.validated_data['first_name'],
             last_name=self.validated_data['last_name'],
         )
@@ -27,4 +28,4 @@ class RegistrationSerializer(serializers.ModelSerializer):
 class AccountPropertiesSerializer(serializers.ModelSerializer):
     class Meta:
         model = Account
-        fields = ['pk', 'email', 'username', 'first_name', 'last_name']
+        fields = ['user_id', 'email', 'username', 'student_id', 'first_name', 'last_name', 'mobile_number']
