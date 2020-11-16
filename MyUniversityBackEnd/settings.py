@@ -40,6 +40,7 @@ INSTALLED_APPS = [
     'rest_framework.authtoken',
     'chat.apps.ChatConfig',
     'account',
+    'BookBSE',
 ]
 
 AUTH_USER_MODEL = 'account.Account'
