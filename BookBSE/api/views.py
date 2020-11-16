@@ -378,15 +378,30 @@ class Trades(APIView):
                 if state == 'seller':
                     sells = Trade.objects.filter(seller=user)
                     serializer = TradeSerializer(sells, many=True)
-                    return Response(serializer.data, status=status.HTTP_200_OK)
+                    data = json.loads(json.dumps(serializer.data))
+                    for x in data:
+                        for key in x['book'].keys():
+                            x[key] = x['book'][key]
+                        del x['book']
+                    return Response(data, status=status.HTTP_200_OK)
                 elif state == 'buyer':
                     buies = Trade.objects.filter(buyer=user)
                     serializer = TradeSerializer(buies, many=True)
-                    return Response(serializer.data, status=status.HTTP_200_OK)
+                    data = json.loads(json.dumps(serializer.data))
+                    for x in data:
+                        for key in x['book'].keys():
+                            x[key] = x['book'][key]
+                        del x['book']
+                    return Response(data, status=status.HTTP_200_OK)
                 elif state == 'all':
                     trades = Trade.objects.filter(Q(seller=user) | Q(buyer=user))
                     serializer = TradeSerializer(trades, many=True)
-                    return Response(serializer.data, status=status.HTTP_200_OK)
+                    data = json.loads(json.dumps(serializer.data))
+                    for x in data:
+                        for key in x['book'].keys():
+                            x[key] = x['book'][key]
+                        del x['book']
+                    return Response(data, status=status.HTTP_200_OK)
                 else:
                     return Response(f"INVALID State: {state}, BAD REQUEST", status=status.HTTP_400_BAD_REQUEST)
             else:

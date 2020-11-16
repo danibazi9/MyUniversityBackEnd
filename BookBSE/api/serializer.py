@@ -95,6 +95,8 @@ class DemandSerializer(serializers.ModelSerializer):
 
 
 class TradeSerializer(serializers.ModelSerializer):
+    book = MyBookSerializer(read_only=True)
+
     class Meta:
         model = Trade
         fields = '__all__'
