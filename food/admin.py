@@ -1,4 +1,5 @@
 from django.contrib import admin
-from .models import *
+from . import models
 
-admin.register()
+admin.register(models.Food)
+admin.register(models.Serve)
