@@ -166,6 +166,7 @@ class Stocks(APIView):
             for x in data:
                 for key in x['book'].keys():
                     x[key] = x['book'][key]
+                    x['seller_username'] = Account.objects.get(user_id=x['seller']).username
                 del x['book']
             return Response(data)
         else:

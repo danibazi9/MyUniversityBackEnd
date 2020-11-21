@@ -23,7 +23,7 @@ class ChatConsumer(WebsocketConsumer):
     def new_message(self, data):
         sender = data['sender']
         print(data)
-        sender_user = User.objects.filter(user_id=sender)[0]
+        sender_user = User.objects.filter(username=sender)[0]
         room = Room.objects.get(room_id=data['room_id'])
         message = Message.objects.create(
             sender_id=sender_user,
