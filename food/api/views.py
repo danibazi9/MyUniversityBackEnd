@@ -73,16 +73,18 @@ class Foods(APIView):
             return Response("food_id: None, BAD REQUEST ", status=status.HTTP_400_BAD_REQUEST)
 
 
-@api_view(['GET', ])
-def get_all_serves(self, request):
-    try:
-        seller_id = self.request.user.user_id
-    except Account.DoesNotExist:
-        return Response(status=status.HTTP_404_NOT_FOUND)
-
-    if request.method == 'GET':
-        serves = Serve.objects.filter(seller_id=seller_id)
-        serializer = FoodSerializer(serves, many=True)
+@permission_classes((IsAuthenticated,))
+class ServesAll(APIView):
+    def get(self, arg):
+        try:
+            seller_id = self.request.user.user_id
+        except:
+            return Response(f"seller_id: None, BAD REQUEST", status=status.HTTP_400_BAD_REQUEST)
+        try:
+            serves = Serve.objects.filter(seller_id=seller_id)
+        except:
+            return Response(f"food_id: None, BAD REQUEST", status=status.HTTP_400_BAD_REQUEST)
+        serializer = ServeSerializer(serves, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
 
 

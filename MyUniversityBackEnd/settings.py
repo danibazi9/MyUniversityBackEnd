@@ -41,6 +41,7 @@ INSTALLED_APPS = [
     'chat.apps.ChatConfig',
     'account',
     'BookBSE',
+    'food',
 ]
 
 AUTH_USER_MODEL = 'account.Account'

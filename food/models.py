@@ -1,6 +1,7 @@
 from django.db import models
 from account.models import *
 
+
 class Food(models.Model):
     food_id = models.AutoField(primary_key=True)
     name = models.CharField(max_length=50)
