@@ -15,7 +15,7 @@ class Field(models.Model):
     faculty = models.ForeignKey(Faculty, on_delete=models.CASCADE)
 
     def __str__(self):
-        return f"Faculty: {self.faculty.name}; Field: {self.name}"
+        return self.name
 
 
 class Book(models.Model):
@@ -72,7 +72,7 @@ class Trade(models.Model):
         unique_together = ('book', 'seller', 'buyer')
 
     def __str__(self):
-        return f"Book: {self.book.__str__()}; Seller: {self.seller.__str__()}; Buyer: {self.buyer.__str__()}"
+        return f"Book: {self.book.name}; Seller: {self.seller.username}; Buyer: {self.buyer.username}"
 
 
 class Demand(models.Model):
