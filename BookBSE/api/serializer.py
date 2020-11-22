@@ -101,6 +101,31 @@ class TradeSerializer(serializers.ModelSerializer):
         fields = '__all__'
 
 
+class StocksHistorySerializer(serializers.ModelSerializer):
+    id = serializers.IntegerField(read_only=True)
+    book = MyBookSerializer(read_only=True)
+    image = serializers.StringRelatedField(read_only=True)
+    price = serializers.IntegerField(read_only=True)
+    description = serializers.StringRelatedField(read_only=True)
+
+    class Meta:
+        model = Stock
+        fields = ('id', 'book', 'image', 'price', 'seller', 'description')
+
+
+class TradesHistorySerializer(serializers.ModelSerializer):
+    id = serializers.IntegerField(read_only=True)
+    book = MyBookSerializer(read_only=True)
+    image = serializers.StringRelatedField(read_only=True)
+    price = serializers.IntegerField(read_only=True)
+    trade = serializers.DateTimeField(format="%Y-%m-%d %H:%M:%S")
+    description = serializers.StringRelatedField(read_only=True)
+
+    class Meta:
+        model = Trade
+        fields = ('id', 'book', 'image', 'price', 'trade', 'seller', 'buyer', 'description')
+
+
 class ReportProblemSerializer(serializers.ModelSerializer):
     class Meta:
         model = ReportProblem
