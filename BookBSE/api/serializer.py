@@ -66,27 +66,6 @@ class StockSerializerStockID(serializers.ModelSerializer):
         model = Stock
         fields = ('id', 'book', 'image', 'price', 'upload', 'seller', 'description')
 
-# class PostStockSerializer(serializers.ModelSerializer):
-# #
-# #     seller = serializers.SerializerMethodField('getID')
-# #     class Meta:
-# #         model = Stock
-# #         fields = ['book', 'edition', 'printno', 'price', 'seller', 'upload', 'update']
-# #
-# #     def getID(self, user):
-# #         print("UserID: ", user.user_id)
-# #         return user.user_id
-# #
-# #     def Save(self):
-# #         stock = Stock(
-# #             book= self.validated_data['book'],
-# #             edition= self.validated_data['edition'],
-# #             printno= self.validated_data['printno'],
-# #             price= self.validated_data['price'],
-# #             seller= self.validated_data['seller']
-# #         )
-# #         return stock
-
 
 class DemandSerializer(serializers.ModelSerializer):
     class Meta:
@@ -100,6 +79,31 @@ class TradeSerializer(serializers.ModelSerializer):
     class Meta:
         model = Trade
         fields = '__all__'
+
+
+class StocksHistorySerializer(serializers.ModelSerializer):
+    id = serializers.IntegerField(read_only=True)
+    book = MyBookSerializer(read_only=True)
+    image = serializers.StringRelatedField(read_only=True)
+    price = serializers.IntegerField(read_only=True)
+    description = serializers.StringRelatedField(read_only=True)
+
+    class Meta:
+        model = Stock
+        fields = ('id', 'book', 'image', 'price', 'seller', 'description')
+
+
+class TradesHistorySerializer(serializers.ModelSerializer):
+    id = serializers.IntegerField(read_only=True)
+    book = MyBookSerializer(read_only=True)
+    image = serializers.StringRelatedField(read_only=True)
+    price = serializers.IntegerField(read_only=True)
+    trade = serializers.DateTimeField(format="%Y-%m-%d %H:%M:%S")
+    description = serializers.StringRelatedField(read_only=True)
+
+    class Meta:
+        model = Trade
+        fields = ('id', 'book', 'image', 'price', 'trade', 'seller', 'buyer', 'description')
 
 
 class ReportProblemSerializer(serializers.ModelSerializer):
