@@ -27,12 +27,12 @@ class Fields(APIView):
         facultyID = self.request.query_params.get('facultyID', None)
         # print(f"Faculty: {facultyID}")
 
-        if facultyID != None:
+        if facultyID is not None:
             try:
                 faculty = Faculty.objects.get(id=facultyID)
             except:
                 faculty = None
-            if faculty != None:
+            if faculty is not None:
                 # print("VERIFIED")
                 fields = Field.objects.filter(faculty=facultyID)
                 serializer = FieldSerializer(fields, many=True)
@@ -46,14 +46,14 @@ class Fields(APIView):
 class Books(APIView):
     def get(self, arg):
         bookID = self.request.query_params.get('bookID', None)
-        if bookID != None:
+        if bookID is not None:
             if bookID != '0':
                 try:
                     book = Book.objects.get(id=bookID)
                 except:
                     book = None
                 # print("="*125, f"\nBook = {book}\n", "="*125)
-                if book != None:
+                if book is not None:
                     serializer = BookSerializer(book)
                     # print("=" * 125, f"\nBookSerializerData = {serializer.data}\n", "=" * 125)
                     return Response(serializer.data, status=status.HTTP_200_OK)
@@ -139,7 +139,8 @@ class Stocks(APIView):
         try:
             userID = self.request.user.user_id
         except:
-            return Response(f"UserID: None, BAD REQUEST", status=status.HTTP_400_BAD_REQUEST)
+            return Response(f"Authentication Error! Invalid token", status=status.HTTP_400_BAD_REQUEST)
+
         state = self.request.query_params.get('state', None)
         if state == 'sell':
             stocks = Stock.objects.filter(seller=userID)
@@ -149,9 +150,9 @@ class Stocks(APIView):
                 for key in x['book'].keys():
                     x[key] = x['book'][key]
                 del x['book']
-            return Response(data)
+            return Response(data, status=status.HTTP_200_OK)
         elif state == 'buy':
-            stocks = Stock.objects.exclude(seller_id=userID)
+            stocks = Stock.objects.exclude(seller=userID)
             serializer = AllStockSerializer(stocks, many=True)
             data = json.loads(json.dumps(serializer.data))
             for x in data:
@@ -190,7 +191,7 @@ class Stocks(APIView):
                 serializer.save()
                 return Response(serializer.data, status=status.HTTP_201_CREATED)
             else:
-                return Response("ACCESS DENIED", status=status.HTTP_403_FORBIDDEN)
+                return Response("ACCESS DENIED!", status=status.HTTP_403_FORBIDDEN)
         else:
             return Response(f"{serializer.errors}, BAD REQUEST", status=status.HTTP_400_BAD_REQUEST)
 
@@ -233,7 +234,7 @@ class Stocks(APIView):
                     stock.delete()
                     return Response(f"StockID: {stockID}, DELETED", status=status.HTTP_204_NO_CONTENT)
                 else:
-                    return Response("ACCESS DENIED", status=status.HTTP_403_FORBIDDEN)
+                    return Response("ACCESS DENIED!", status=status.HTTP_403_FORBIDDEN)
             else:
                 return Response(f"StockID={stockID}, NOT FOUND", status=status.HTTP_404_NOT_FOUND)
         else:
@@ -445,7 +446,7 @@ class Trades(APIView):
                 if serializer.is_valid():
                     if serializer.validated_data['seller'] == user:
                         if trade.state == False:
-                            if serializer.validated_data['state'] == True and\
+                            if serializer.validated_data['state'] == True and \
                                     serializer.validated_data['trade'] is not None:
                                 trade.state = serializer.validated_data['state']
                                 trade.trade = serializer.validated_data['trade']
@@ -489,10 +490,38 @@ class Trades(APIView):
 
 
 @permission_classes((IsAuthenticated,))
-class Histories(APIView):
+class StocksHistory(APIView):
     def get(self, arg):
+        try:
+            user = self.request.user
+        except:
+            return Response(f"Authentication Error! Invalid token", status=status.HTTP_400_BAD_REQUEST)
+
+        try:
+            stocks = Stock.objects.filter(seller=user)
+        except:
+            stocks = None
+        if stocks is not None:
+            serializer = StocksHistorySerializer(stocks, many=True)
+            data = json.loads(json.dumps(serializer.data))
+            for x in data:
+                for key in x['book'].keys():
+                    x[key] = x['book'][key]
+                del x['book']
+            return Response(data, status=status.HTTP_200_OK)
+        else:
+            return Response(f"Stocks: seller {user}, NOT FOUND", status=status.HTTP_404_NOT_FOUND)
+
+
+@permission_classes((IsAuthenticated,))
+class TradesHistory(APIView):
+    def get(self, arg):
+        try:
+            user = self.request.user
+        except:
+            return Response(f"Authentication Error! Invalid token", status=status.HTTP_400_BAD_REQUEST)
+
         state = self.request.query_params.get('state', None)
-        user = self.request.user
         if state is not None:
             if state == 'all':
                 try:
@@ -500,8 +529,13 @@ class Histories(APIView):
                 except:
                     trades = None
                 if trades is not None:
-                    serializer = TradeSerializer(trades, many=True)
-                    return Response(serializer.data, status=status.HTTP_200_OK)
+                    serializer = TradesHistorySerializer(trades, many=True)
+                    data = json.loads(json.dumps(serializer.data))
+                    for x in data:
+                        for key in x['book'].keys():
+                            x[key] = x['book'][key]
+                        del x['book']
+                    return Response(data, status=status.HTTP_200_OK)
                 else:
                     return Response(f"Trades, Seller/Buyer: {user}, NOT FOUND", status=status.HTTP_404_NOT_FOUND)
             elif state == 'seller':
@@ -510,8 +544,13 @@ class Histories(APIView):
                 except:
                     trades = None
                 if trades is not None:
-                    serializer = TradeSerializer(trades, many=True)
-                    return Response(serializer.data, status=status.HTTP_200_OK)
+                    serializer = TradesHistorySerializer(trades, many=True)
+                    data = json.loads(json.dumps(serializer.data))
+                    for x in data:
+                        for key in x['book'].keys():
+                            x[key] = x['book'][key]
+                        del x['book']
+                    return Response(data, status=status.HTTP_200_OK)
                 else:
                     return Response(f"Trades, Seller/Buyer: {user}, NOT FOUND", status=status.HTTP_404_NOT_FOUND)
             elif state == 'buyer':
@@ -520,8 +559,13 @@ class Histories(APIView):
                 except:
                     trades = None
                 if trades is not None:
-                    serializer = TradeSerializer(trades, many=True)
-                    return Response(serializer.data, status=status.HTTP_200_OK)
+                    serializer = TradesHistorySerializer(trades, many=True)
+                    data = json.loads(json.dumps(serializer.data))
+                    for x in data:
+                        for key in x['book'].keys():
+                            x[key] = x['book'][key]
+                        del x['book']
+                    return Response(data, status=status.HTTP_200_OK)
                 else:
                     return Response(f"Trades, Seller/Buyer: {user}, NOT FOUND", status=status.HTTP_404_NOT_FOUND)
         else:
