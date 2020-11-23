@@ -81,12 +81,11 @@ class Demand(models.Model):
     client = models.ForeignKey(Account, on_delete=models.CASCADE, related_name='DemandClient')
     imageUrl = models.URLField(blank=True, null=True)
 
-
     class Meta:
         unique_together = ('book', 'seller', 'client')
 
     def __str__(self):
-        return f"Book: {self.book.__str__()}; Seller: {self.seller.__str__()}; Client: {self.client.__str__()}"
+        return f"Book: {self.book.name}; Seller: {self.seller.username}; Client: {self.client.username}"
 
 
 class ReportProblem(models.Model):
@@ -99,4 +98,4 @@ class ReportProblem(models.Model):
         unique_together = ('accuser', 'accused', 'trade')
 
     def __str__(self):
-        return f"Accuser: {self.accuser.__str__()}, Accused: {self.accused.__str__()}, Trade: {self.trade.__str__()}"
+        return f"Accuser: {self.accuser.username}, Accused: {self.accused.username}, Trade: {self.trade.book.name}"
