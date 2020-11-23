@@ -4,7 +4,7 @@ from rest_framework import status
 from rest_framework.parsers import FileUploadParser
 from rest_framework.views import APIView
 from rest_framework.response import Response
-from rest_framework.decorators import permission_classes
+from rest_framework.decorators import *
 from rest_framework.permissions import IsAuthenticated
 from BookBSE.models import *
 from BookBSE.api.serializer import *
@@ -185,78 +185,7 @@ class Stocks(APIView):
                     x['seller_username'] = Account.objects.get(user_id=x['seller']).username
                 del x['book']
             return Response(data)
-        # state = self.request.query_params.get('state', None)
-        # if state == 'sell':
-        #     stocks = Stock.objects.filter(seller=userID)
-        #     serializer = AllStockSerializer(stocks, many=True)
-        #     data = json.loads(json.dumps(serializer.data))
-        #     for x in data:
-        #         for key in x['book'].keys():
-        #             x[key] = x['book'][key]
-        #         del x['book']
-        #     return Response(data)
-        # elif state == 'buy':
-        #     stocks = Stock.objects.exclude(seller_id=userID)
-        #     serializer = AllStockSerializer(stocks, many=True)
-        #     data = json.loads(json.dumps(serializer.data))
-        #     for x in data:
-        #         for key in x['book'].keys():
-        #             x[key] = x['book'][key]
-        #         del x['book']
-        #     return Response(data)
-        # elif state == 'all':
-        #     if search is None and faculty is None:
-        #         stocks = Stock.objects.all()  # .prefetch_related('book')
-        #         serializer = AllStockSerializer(stocks, many=True)
-        #         data = json.loads(json.dumps(serializer.data))
-        #         for x in data:
-        #             for key in x['book'].keys():
-        #                 x[key] = x['book'][key]
-        #                 x['seller_username'] = Account.objects.get(user_id=x['seller']).username
-        #             del x['book']
-        #         return Response(data)
-        #     elif search is not None and faculty is None:
-        #         stocks = Stock.objects.filter(book__name__icontains=search)  # .prefetch_related('book')
-        #         serializer = AllStockSerializer(stocks, many=True)
-        #         data = json.loads(json.dumps(serializer.data))
-        #         for x in data:
-        #             for key in x['book'].keys():
-        #                 x[key] = x['book'][key]
-        #                 x['seller_username'] = Account.objects.get(user_id=x['seller']).username
-        #             del x['book']
-        #         return Response(data)
-        #     elif search is None and faculty is not None:
-        #         stocks = Stock.objects.filter(book__faculty__name=faculty)  # .prefetch_related('book')
-        #         serializer = AllStockSerializer(stocks, many=True)
-        #         data = json.loads(json.dumps(serializer.data))
-        #         for x in data:
-        #             for key in x['book'].keys():
-        #                 x[key] = x['book'][key]
-        #                 x['seller_username'] = Account.objects.get(user_id=x['seller']).username
-        #             del x['book']
-        #         return Response(data)
-        #     else:
-        #         stocks = Stock.objects.filter(book__name__icontains=search, book__faculty=faculty)  # .prefetch_related('book')
-        #         serializer = AllStockSerializer(stocks, many=True)
-        #         data = json.loads(json.dumps(serializer.data))
-        #         for x in data:
-        #             for key in x['book'].keys():
-        #                 x[key] = x['book'][key]
-        #                 x['seller_username'] = Account.objects.get(user_id=x['seller']).username
-        #             del x['book']
-        #         return Response(data)
-        # else:
-        #     stockID = self.request.query_params.get('stockID', None)
-        #     if stockID is not None:
-        #         stock = Stock.objects.get(id=stockID)
-        #         serializer = StockSerializerStockID(stock)
-        #         data = json.loads(json.dumps(serializer.data))
-        #         for key in data['book'].keys():
-        #             data[key] = data['book'][key]
-        #         del data['book']
-        #         return Response(data)
-        #     else:
-        #         return Response(f"StockID: None, BAD REQUEST", status=status.HTTP_400_BAD_REQUEST)
+
 
     def post(self, arg):
         user = self.request.user
@@ -315,6 +244,15 @@ class Stocks(APIView):
                 return Response(f"StockID={stockID}, NOT FOUND", status=status.HTTP_404_NOT_FOUND)
         else:
             return Response("StockID: None, BAD REQUEST", status=status.HTTP_400_BAD_REQUEST)
+
+
+class Deleter(APIView):
+    def delete(self, arg):
+        map = self.request.data
+        print(map)
+        demands = Demand.objects.filter(seller_id=map['seller'])
+        demands.delete()
+        return Response('deleted', status=status.HTTP_200_OK)
 
 
 @permission_classes((IsAuthenticated,))
@@ -434,6 +372,8 @@ class Demands(APIView):
 
 @permission_classes((IsAuthenticated,))
 class Trades(APIView):
+    # def delete_demands(self, seller_id, client_id, book_id):
+
     def get(self, arg):
         user = self.request.user
         tradeID = self.request.query_params.get('tradeID', None)

@@ -8,6 +8,7 @@ urlpatterns = [
     path('stocks/', views.Stocks.as_view()),
     path('stocks/so/', views.StocksSO.as_view()),
     path('demands/', views.Demands.as_view()),
+    path('demands/delete/', views.Deleter.as_view()),
     path('trades/', views.Trades.as_view()),
     path('trades/so/', views.TradesSO.as_view()),
     path('trades/history/', views.Histories.as_view()),
