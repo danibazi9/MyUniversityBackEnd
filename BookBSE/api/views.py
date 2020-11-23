@@ -136,51 +136,127 @@ class Books(APIView):
 @permission_classes((IsAuthenticated,))
 class Stocks(APIView):
     def get(self, arg):
-        try:
-            userID = self.request.user.user_id
-        except:
-            return Response(f"Authentication Error! Invalid token", status=status.HTTP_400_BAD_REQUEST)
-
-        state = self.request.query_params.get('state', None)
-        if state == 'sell':
-            stocks = Stock.objects.filter(seller=userID)
-            serializer = AllStockSerializer(stocks, many=True)
+        # getting params from url link
+        stock_id = self.request.query_params.get('stockID', None)
+        if stock_id is not None:
+            stock = Stock.objects.get(id=stock_id)
+            serializer = StockSerializerStockID(stock)
             data = json.loads(json.dumps(serializer.data))
-            for x in data:
-                for key in x['book'].keys():
-                    x[key] = x['book'][key]
-                del x['book']
-            return Response(data, status=status.HTTP_200_OK)
-        elif state == 'buy':
-            stocks = Stock.objects.exclude(seller=userID)
-            serializer = AllStockSerializer(stocks, many=True)
-            data = json.loads(json.dumps(serializer.data))
-            for x in data:
-                for key in x['book'].keys():
-                    x[key] = x['book'][key]
-                del x['book']
-            return Response(data)
-        elif state == 'all':
-            stocks = Stock.objects.all()  # .prefetch_related('book')
-            serializer = AllStockSerializer(stocks, many=True)
-            data = json.loads(json.dumps(serializer.data))
-            for x in data:
-                for key in x['book'].keys():
-                    x[key] = x['book'][key]
-                del x['book']
+            for key in data['book'].keys():
+                data[key] = data['book'][key]
+            del data['book']
             return Response(data)
         else:
-            stockID = self.request.query_params.get('stockID', None)
-            if stockID is not None:
-                stock = Stock.objects.get(id=stockID)
-                serializer = StockSerializerStockID(stock)
-                data = json.loads(json.dumps(serializer.data))
-                for key in data['book'].keys():
-                    data[key] = data['book'][key]
-                del data['book']
-                return Response(data)
+            search = self.request.query_params.get('search', None)
+            min = self.request.query_params.get('min', None)
+            max = self.request.query_params.get('max', None)
+            faculty = self.request.query_params.get('faculty', None)
+            print('search: ', search)
+            print('min: ', min)
+            print('max: ', max)
+            print('faculty: ', faculty)
+            # checking for a token from user
+            try:
+                userID = self.request.user.user_id
+            except:
+                return Response(f"UserID: None, BAD REQUEST", status=status.HTTP_400_BAD_REQUEST)
+
+            if search is None and min is None and faculty is None:
+                stocks = Stock.objects.all()
+            elif search is None and min is None and faculty is not None:
+                stocks = Stock.objects.filter(book__faculty__name=faculty)
+            elif search is None and min is not None and faculty is None:
+                stocks = Stock.objects.filter(price__gte=min, price__lte=max)
+            elif search is not None and min is None and faculty is None:
+                stocks = Stock.objects.filter(book__name__icontains=search)
+            elif search is None and min is not None and faculty is not None:
+                stocks = Stock.objects.filter(price__gte=min, price__lte=max, book__faculty__name=faculty)
+            elif search is not None and min is None and faculty is not None:
+                stocks = Stock.objects.filter(book__name__icontains=search, book__faculty__name=faculty)
+            elif search is not None and min is not None and faculty is None:
+                stocks = Stock.objects.filter(price__gte=min, price__lte=max, book__name__icontains=search)
             else:
-                return Response(f"StockID: None, BAD REQUEST", status=status.HTTP_400_BAD_REQUEST)
+                stocks = Stock.objects.filter(price__gte=min, price__lte=max, book__name__icontains=search, book__faculty__name=faculty)
+            serializer = AllStockSerializer(stocks, many=True)
+            data = json.loads(json.dumps(serializer.data))
+            for x in data:
+                for key in x['book'].keys():
+                    x[key] = x['book'][key]
+                    x['seller_username'] = Account.objects.get(user_id=x['seller']).username
+                del x['book']
+            return Response(data)
+        # state = self.request.query_params.get('state', None)
+        # if state == 'sell':
+        #     stocks = Stock.objects.filter(seller=userID)
+        #     serializer = AllStockSerializer(stocks, many=True)
+        #     data = json.loads(json.dumps(serializer.data))
+        #     for x in data:
+        #         for key in x['book'].keys():
+        #             x[key] = x['book'][key]
+        #         del x['book']
+        #     return Response(data)
+        # elif state == 'buy':
+        #     stocks = Stock.objects.exclude(seller_id=userID)
+        #     serializer = AllStockSerializer(stocks, many=True)
+        #     data = json.loads(json.dumps(serializer.data))
+        #     for x in data:
+        #         for key in x['book'].keys():
+        #             x[key] = x['book'][key]
+        #         del x['book']
+        #     return Response(data)
+        # elif state == 'all':
+        #     if search is None and faculty is None:
+        #         stocks = Stock.objects.all()  # .prefetch_related('book')
+        #         serializer = AllStockSerializer(stocks, many=True)
+        #         data = json.loads(json.dumps(serializer.data))
+        #         for x in data:
+        #             for key in x['book'].keys():
+        #                 x[key] = x['book'][key]
+        #                 x['seller_username'] = Account.objects.get(user_id=x['seller']).username
+        #             del x['book']
+        #         return Response(data)
+        #     elif search is not None and faculty is None:
+        #         stocks = Stock.objects.filter(book__name__icontains=search)  # .prefetch_related('book')
+        #         serializer = AllStockSerializer(stocks, many=True)
+        #         data = json.loads(json.dumps(serializer.data))
+        #         for x in data:
+        #             for key in x['book'].keys():
+        #                 x[key] = x['book'][key]
+        #                 x['seller_username'] = Account.objects.get(user_id=x['seller']).username
+        #             del x['book']
+        #         return Response(data)
+        #     elif search is None and faculty is not None:
+        #         stocks = Stock.objects.filter(book__faculty__name=faculty)  # .prefetch_related('book')
+        #         serializer = AllStockSerializer(stocks, many=True)
+        #         data = json.loads(json.dumps(serializer.data))
+        #         for x in data:
+        #             for key in x['book'].keys():
+        #                 x[key] = x['book'][key]
+        #                 x['seller_username'] = Account.objects.get(user_id=x['seller']).username
+        #             del x['book']
+        #         return Response(data)
+        #     else:
+        #         stocks = Stock.objects.filter(book__name__icontains=search, book__faculty=faculty)  # .prefetch_related('book')
+        #         serializer = AllStockSerializer(stocks, many=True)
+        #         data = json.loads(json.dumps(serializer.data))
+        #         for x in data:
+        #             for key in x['book'].keys():
+        #                 x[key] = x['book'][key]
+        #                 x['seller_username'] = Account.objects.get(user_id=x['seller']).username
+        #             del x['book']
+        #         return Response(data)
+        # else:
+        #     stockID = self.request.query_params.get('stockID', None)
+        #     if stockID is not None:
+        #         stock = Stock.objects.get(id=stockID)
+        #         serializer = StockSerializerStockID(stock)
+        #         data = json.loads(json.dumps(serializer.data))
+        #         for key in data['book'].keys():
+        #             data[key] = data['book'][key]
+        #         del data['book']
+        #         return Response(data)
+        #     else:
+        #         return Response(f"StockID: None, BAD REQUEST", status=status.HTTP_400_BAD_REQUEST)
 
     def post(self, arg):
         user = self.request.user
@@ -251,25 +327,26 @@ class Demands(APIView):
             except:
                 return Response(f"UserID: None, BAD REQUEST", status=status.HTTP_400_BAD_REQUEST)
             if state == 'client':
-                sellers = Demand.objects.filter(client=user)
-                serializer = DemandSerializer(sellers, many=True)
-                return Response(serializer.data, status=status.HTTP_200_OK)
+                demands = Demand.objects.filter(client=user)
             elif state == 'seller':
-                applicants = Demand.objects.filter(seller=user)
-                serializer = DemandSerializer(applicants, many=True)
-                return Response(serializer.data, status=status.HTTP_200_OK)
+                demands = Demand.objects.filter(seller=user)
             elif state == 'all':
                 demands = Demand.objects.all()
-                serializer = DemandSerializer(demands, many=True)
-                return Response(serializer.data, status=status.HTTP_200_OK)
-            else:
-                return Response(f"INVALID State: {state}, BAD REQUEST", status=status.HTTP_400_BAD_REQUEST)
+            serializer = DemandSerializer(demands, many=True)
+            data = json.loads(json.dumps(serializer.data))
+            print(data)
+            for x in data:
+                for key in x['book'].keys():
+                    x[key] = x['book'][key]
+                del x['book']
+            return Response(data, status=status.HTTP_200_OK)
         else:
             return Response(f"State: None, BAD REQUEST", status=status.HTTP_400_BAD_REQUEST)
 
     def post(self, arg):
         user = self.request.user
-        serializer = DemandSerializer(data=self.request.data)
+        serializer = DemandPostSerializer(data=self.request.data)
+        print(serializer)
         if serializer.is_valid():
             if serializer.validated_data['client'] == user:
                 serializer.save()
@@ -395,6 +472,7 @@ class Trades(APIView):
                         del x['book']
                     return Response(data, status=status.HTTP_200_OK)
                 elif state == 'all':
+                    trades = Trade.objects.filter(Q(seller=user) | Q(buyer=user))
                     trades = Trade.objects.filter(Q(seller=user) | Q(buyer=user))
                     serializer = TradeSerializer(trades, many=True)
                     data = json.loads(json.dumps(serializer.data))

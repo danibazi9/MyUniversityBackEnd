@@ -32,7 +32,11 @@ def chat_properties_view(request):
     if request.method == 'GET':
         rooms = Room.objects.filter(first_user_id=account) | Room.objects.filter(second_user_id=account)
         serializer = RoomSerializer(rooms, many=True)
-        return Response(serializer.data, status=status.HTTP_200_OK)
+        data = json.loads(json.dumps(serializer.data))
+        for x in data:
+            x['second_user_id'] = x['second_user_id'].split(',')[0]
+            x['first_user_id'] = x['first_user_id'].split(',')[0]
+        return Response(data, status=status.HTTP_200_OK)
 
 
 @api_view(['POST', ])
@@ -43,9 +47,10 @@ def create_room_view(request):
         return Response("Authentication user Failed!", status=status.HTTP_404_NOT_FOUND)
 
     try:
-        sender = Account.objects.get(user_id=request.POST['user_id'])
+        body = json.loads(request.body)
+        sender = Account.objects.get(user_id=body['user_id'])
     except Account.DoesNotExist:
-        return Response(f"The account with user_id {request.POST['user_id']} doesn't exist!",
+        return Response(f"The account with user_id {request.POST.get('user_id')} doesn't exist!",
                         status=status.HTTP_404_NOT_FOUND)
 
     if request.method == 'POST':

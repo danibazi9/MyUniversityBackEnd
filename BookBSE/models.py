@@ -79,6 +79,8 @@ class Demand(models.Model):
     book = models.ForeignKey(Book, on_delete=models.CASCADE)
     seller = models.ForeignKey(Account, on_delete=models.CASCADE, related_name='DemandSeller')
     client = models.ForeignKey(Account, on_delete=models.CASCADE, related_name='DemandClient')
+    imageUrl = models.URLField(blank=True, null=True)
+
 
     class Meta:
         unique_together = ('book', 'seller', 'client')
