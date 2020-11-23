@@ -32,7 +32,11 @@ def chat_properties_view(request):
     if request.method == 'GET':
         rooms = Room.objects.filter(first_user_id=account) | Room.objects.filter(second_user_id=account)
         serializer = RoomSerializer(rooms, many=True)
-        return Response(serializer.data, status=status.HTTP_200_OK)
+        data = json.loads(json.dumps(serializer.data))
+        for x in data:
+            x['second_user_id'] = x['second_user_id'].split(',')[0]
+            x['first_user_id'] = x['first_user_id'].split(',')[0]
+        return Response(data, status=status.HTTP_200_OK)
 
 
 @api_view(['POST', ])
