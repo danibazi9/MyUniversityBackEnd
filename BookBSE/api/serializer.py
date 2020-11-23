@@ -36,6 +36,11 @@ class MyBookSerializer(serializers.ModelSerializer):
         fields = ('name', 'author', 'faculty', 'field')
 
 
+class AccountSerializer(serializers.ModelSerializer):
+    username = serializers.StringRelatedField(read_only=True)
+
+
+
 class StockSerializer(serializers.ModelSerializer):
     class Meta:
         model = Stock
@@ -66,32 +71,26 @@ class StockSerializerStockID(serializers.ModelSerializer):
         model = Stock
         fields = ('id', 'book', 'image', 'price', 'upload', 'seller', 'description')
 
-# class PostStockSerializer(serializers.ModelSerializer):
-# #
-# #     seller = serializers.SerializerMethodField('getID')
-# #     class Meta:
-# #         model = Stock
-# #         fields = ['book', 'edition', 'printno', 'price', 'seller', 'upload', 'update']
-# #
-# #     def getID(self, user):
-# #         print("UserID: ", user.user_id)
-# #         return user.user_id
-# #
-# #     def Save(self):
-# #         stock = Stock(
-# #             book= self.validated_data['book'],
-# #             edition= self.validated_data['edition'],
-# #             printno= self.validated_data['printno'],
-# #             price= self.validated_data['price'],
-# #             seller= self.validated_data['seller']
-# #         )
-# #         return stock
 
-
-class DemandSerializer(serializers.ModelSerializer):
+class DemandPostSerializer(serializers.ModelSerializer):
     class Meta:
         model = Demand
         fields = '__all__'
+
+
+class DemandSerializer(serializers.ModelSerializer):
+    id = serializers.IntegerField(read_only=True)
+    book = MyBookSerializer(read_only=True)
+    # username = AccountSerializer(read_only=True)
+    imageUrl = serializers.StringRelatedField(read_only=True)
+
+
+    class Meta:
+        model = Demand
+        fields = ('id', 'book', 'imageUrl', 'seller', 'client')
+    # class Meta:
+    #     model = Demand
+    #     fields = '__all__'
 
 
 class TradeSerializer(serializers.ModelSerializer):
