@@ -53,27 +53,28 @@ class Stock(models.Model):
 
 
 class Trade(models.Model):
-    book = models.ForeignKey(Book, on_delete=models.CASCADE)
-    edition = models.IntegerField()
-    printno = models.IntegerField()
-    image = models.ImageField(upload_to='images/', blank=True)
-    price = models.IntegerField()
-    description = models.CharField(max_length=1024, null=True)
-
-    seller = models.ForeignKey(Account, on_delete=models.CASCADE, related_name='seller')
-    buyer = models.ForeignKey(Account, on_delete=models.CASCADE, related_name='buyer')
-    upload = models.DateTimeField()
-    update = models.DateTimeField()
-    reserve = models.DateTimeField(auto_now_add=True)
-    trade = models.DateTimeField(blank=True, null=True)
-    state = models.BooleanField(default=False)
     # book = models.ForeignKey(Book, on_delete=models.CASCADE)
-    # image = models.URLField(null=True, blank=True)
-    # seller = models.ForeignKey(Account, on_delete=models.CASCADE, related_name='seller')
-    # buyer = models.ForeignKey(Account, on_delete=models.CASCADE, related_name='buyer')
-    # state = models.BooleanField(default=False)
+    # edition = models.IntegerField()
+    # printno = models.IntegerField()
+    # image = models.ImageField(upload_to='images/', blank=True)
     # price = models.IntegerField()
     # description = models.CharField(max_length=1024, null=True)
+    #
+    # seller = models.ForeignKey(Account, on_delete=models.CASCADE, related_name='seller')
+    # buyer = models.ForeignKey(Account, on_delete=models.CASCADE, related_name='buyer')
+    # upload = models.DateTimeField()
+    # update = models.DateTimeField()
+    # reserve = models.DateTimeField(auto_now_add=True)
+    # trade = models.DateTimeField(blank=True, null=True)
+    # state = models.BooleanField(default=False)
+    book = models.ForeignKey(Book, on_delete=models.CASCADE)
+    image = models.URLField(null=True, blank=True)
+    seller = models.ForeignKey(Account, on_delete=models.CASCADE, related_name='seller')
+    buyer = models.ForeignKey(Account, on_delete=models.CASCADE, related_name='buyer')
+    state = models.BooleanField(default=False)
+    trade = models.DateTimeField(auto_now_add=True)
+    price = models.IntegerField()
+    description = models.CharField(max_length=1024, null=True)
 
     class Meta:
         unique_together = ('book', 'seller', 'buyer')
@@ -84,9 +85,13 @@ class Trade(models.Model):
 
 class Demand(models.Model):
     book = models.ForeignKey(Book, on_delete=models.CASCADE)
+    stock_id = models.IntegerField()
     seller = models.ForeignKey(Account, on_delete=models.CASCADE, related_name='DemandSeller')
     client = models.ForeignKey(Account, on_delete=models.CASCADE, related_name='DemandClient')
     imageUrl = models.URLField(blank=True, null=True)
+    price = models.IntegerField()
+    description = models.TextField(blank=True)
+    # stockId = models.IntegerField(null=True, blank=True)
 
     class Meta:
         unique_together = ('book', 'seller', 'client')

@@ -26,6 +26,7 @@ class BookSerializer(serializers.ModelSerializer):
 
 
 class MyBookSerializer(serializers.ModelSerializer):
+    book_id = serializers.IntegerField(read_only=True)
     name = serializers.StringRelatedField(read_only=True)
     author = serializers.StringRelatedField(read_only=True)
     faculty = serializers.StringRelatedField(read_only=True)
@@ -33,7 +34,7 @@ class MyBookSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Book
-        fields = ('name', 'author', 'faculty', 'field')
+        fields = ('book_id', 'name', 'author', 'faculty', 'field')
 
 
 class AccountSerializer(serializers.ModelSerializer):
@@ -55,7 +56,7 @@ class AllStockSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Stock
-        fields = ('id', 'book', 'image', 'price', 'upload', 'seller')
+        fields = ('id', 'book_id', 'book', 'image', 'price', 'upload', 'seller')
 
 
 class StockSerializerStockID(serializers.ModelSerializer):
@@ -83,7 +84,7 @@ class DemandSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Demand
-        fields = ('id', 'book', 'imageUrl', 'seller', 'client')
+        fields = ('id', 'book', 'imageUrl', 'seller', 'client', 'price', 'description', 'stock_id')
 
 
 class TradeSerializer(serializers.ModelSerializer):
