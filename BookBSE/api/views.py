@@ -1,5 +1,5 @@
 import json
-
+import base64
 from rest_framework import status
 from rest_framework.parsers import FileUploadParser
 from rest_framework.views import APIView
@@ -9,6 +9,7 @@ from rest_framework.permissions import IsAuthenticated
 from BookBSE.models import *
 from BookBSE.api.serializer import *
 from django.db.models import Q
+from django.core.files.base import ContentFile
 
 
 class Faculties(APIView):
@@ -188,17 +189,28 @@ class Stocks(APIView):
             return Response(data)
 
     def post(self, arg):
-        user = self.request.user
-        serializer = StockSerializer(data=self.request.data)
+        try:
+            user = self.request.user
+        except:
+            return Response('error', status=status.HTTP_401_UNAUTHORIZED)
 
-        if serializer.is_valid():
-            if serializer.validated_data['seller'] == user:
-                serializer.save()
-                return Response(serializer.data, status=status.HTTP_201_CREATED)
-            else:
-                return Response("ACCESS DENIED!", status=status.HTTP_403_FORBIDDEN)
-        else:
-            return Response(f"{serializer.errors}, BAD REQUEST", status=status.HTTP_400_BAD_REQUEST)
+        try:
+            data = self.request.data
+            filename = data['filename']
+            file = ContentFile(base64.b64decode(data['image']), name=filename)
+            stock = Stock()
+            stock.image = file
+            stock.seller = Account.objects.get(user_id=data['seller'])
+            stock.book = Book.objects.get(id=data['book'])
+            stock.price = data['price']
+            stock.edition = data['edition']
+            stock.printno = data['printno']
+            stock.description = data['description']
+            stock.save()
+            return Response('success', status=status.HTTP_201_CREATED)
+        except:
+            return Response('error', status=status.HTTP_400_BAD_REQUEST)
+
 
     def put(self, arg):
         stock_id = self.request.query_params.get('stockID', None)
@@ -255,7 +267,7 @@ class DemandAcceptor(APIView):
         demands.delete()
         # print(demands['seller'])
         trade = Trade()
-        trade.book = Book.objects.get(id=map['book'])
+        trade.book = Book.objects.get(id=map['bookId'])
         trade.seller = Account.objects.get(user_id=map['seller'])
         trade.buyer = Account.objects.get(user_id=map['client'])
         trade.image = map['image']
@@ -269,6 +281,17 @@ class DemandAcceptor(APIView):
         # demands = Demand.objects.filter(seller_id=map['seller'])
         # demands.delete()
         return Response('deleted', status=status.HTTP_200_OK)
+
+
+class DismissReserve(APIView):
+    def delete(self, arg):
+        tradeId = self.request.query_params.get('tradeId', None)
+        if tradeId is not None:
+            trade = Trade.objects.get(id=tradeId)
+            print(trade)
+            return Response('deleted successfully', status=status.HTTP_200_OK)
+        else:
+            return Response('please send tradeId', status=status.HTTP_400_BAD_REQUEST)
 
 
 @permission_classes((IsAuthenticated,))
@@ -526,14 +549,8 @@ class Trades(APIView):
                 trade = None
             if trade is not None:
                 user = self.request.user
-                if trade.seller == user:
-                    if not trade.state:
-                        trade.delete()
-                        return Response(f"Trade: {trade_id}, DELETED", status=status.HTTP_204_NO_CONTENT)
-                    else:
-                        return Response("ACCESS DENIED, TRADE DONE", status=status.HTTP_403_FORBIDDEN)
-                else:
-                    return Response("ACCESS DENIED", status=status.HTTP_403_FORBIDDEN)
+                print(trade)
+                return Response('deleted successfully', status=status.HTTP_200_OK)
             else:
                 return Response(f"TradeID={trade_id}, NOT FOUND", status=status.HTTP_404_NOT_FOUND)
         else:
@@ -678,29 +695,29 @@ class ReportProblems(APIView):
     def post(self, arg):
         trade_id = self.request.query_params.get('tradeID', None)
         user = self.request.user
-
+        print(self.request.data)
         if trade_id is not None:
             try:
+                accuser_id = self.request.data['accuser']
+                accuser = Account.objects.get(user_id=accuser_id)
+            except:
+                return Response('couldn\'t find accuser', status=status.HTTP_404_NOT_FOUND)
+            try:
+                accused_id = self.request.data['accused']
+                accused = Account.objects.get(user_id=accused_id)
+            except:
+                return Response('couldn\'t find accused', status=status.HTTP_404_NOT_FOUND)
+            try:
                 trade = Trade.objects.get(id=trade_id)
-                # print("="*50 ,f"Trade: {Trade.objects.get(id=tradeID)}")
-                if trade.state:
-                    if trade.seller == user or trade.buyer == user:
-                        serializer = ReportProblemSerializer(data=self.request.data)
-                        # print("=" * 50, f"ENTER")
-                        if serializer.is_valid():
-                            if serializer.validated_data['accuser'] == user:
-                                serializer.save()
-                                return Response(serializer.data, status=status.HTTP_200_OK)
-                            else:
-                                return Response(f"Accuser != Req.User, BAD REQUEST", status=status.HTTP_400_BAD_REQUEST)
-                        else:
-                            return Response(f"{serializer.errors}, BAD REQUEST", status=status.HTTP_400_BAD_REQUEST)
-                    else:
-                        return Response(f"ACCESS DENIED", status=status.HTTP_403_FORBIDDEN)
-                else:
-                    return Response(f"ACCESS DENIED, TRADE DONE", status=status.HTTP_403_FORBIDDEN)
-            except Trade.DoesNotExist:
-                return Response(f"Trade: {trade_id}, NOT FOUND", status=status.HTTP_404_NOT_FOUND)
+            except:
+                return Response('couldn\'t find trade', status=status.HTTP_404_NOT_FOUND)
+            report = ReportProblem()
+            report.accuser = accuser
+            report.accused = accused
+            report.trade = trade
+            report.text = self.request.data['text']
+            report.save()
+            return Response('success', status=status.HTTP_201_CREATED)
         else:
             return Response("TradeID: None, BAD REQUEST", status=status.HTTP_400_BAD_REQUEST)
 

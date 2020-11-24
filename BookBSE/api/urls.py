@@ -14,4 +14,6 @@ urlpatterns = [
     path('trades/so/', views.TradesSO.as_view()),
     path('trades/history/', views.TradesHistory.as_view()),
     path('trades/report/', views.ReportProblems.as_view()),
+    path('trades/delete/', views.DismissReserve.as_view()),
+    path('demands/delete/', views.DismissReserve.as_view()),
 ]

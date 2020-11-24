@@ -84,7 +84,7 @@ class DemandSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Demand
-        fields = ('id', 'book', 'imageUrl', 'seller', 'client', 'price', 'description', 'stock_id')
+        fields = ('bookId', 'book', 'imageUrl', 'seller', 'client', 'price', 'description', 'stock_id')
 
 
 class TradeSerializer(serializers.ModelSerializer):
