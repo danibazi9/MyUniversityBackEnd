@@ -25,3 +25,11 @@ class Serve(models.Model):
         return "Seller: " + self.seller_id.username + ", Food: " + \
                self.food_id.name + ", Remaining count: " + str(self.remaining_count)
 
+
+class Order(models.Model):
+    customer_id = models.ForeignKey(Account, on_delete=models.CASCADE)
+    food_id = models.ForeignKey(Food, on_delete=models.CASCADE)
+    time = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return "Customer: " + self.customer_id.username + ", Food: " + self.food_id.name
