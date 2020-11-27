@@ -1,14 +1,15 @@
 import json
-
+import base64
 from rest_framework import status
 from rest_framework.parsers import FileUploadParser
 from rest_framework.views import APIView
 from rest_framework.response import Response
-from rest_framework.decorators import permission_classes
+from rest_framework.decorators import *
 from rest_framework.permissions import IsAuthenticated
 from BookBSE.models import *
 from BookBSE.api.serializer import *
 from django.db.models import Q
+from django.core.files.base import ContentFile
 
 
 class Faculties(APIView):
@@ -159,117 +160,57 @@ class Stocks(APIView):
                 user_id = self.request.user.user_id
             except:
                 return Response(f"UserID: None, BAD REQUEST", status=status.HTTP_400_BAD_REQUEST)
-
+            print(self.request.query_params)
             if search is None and min is None and faculty is None:
-                stocks = Stock.objects.all()
+                stocks = Stock.objects.filter(~Q(seller_id=user_id))
             elif search is None and min is None and faculty is not None:
-                stocks = Stock.objects.filter(book__faculty__name=faculty)
+                stocks = Stock.objects.filter(~Q(seller_id=user_id), book__faculty__name=faculty )
             elif search is None and min is not None and faculty is None:
-                stocks = Stock.objects.filter(price__gte=min, price__lte=max)
+                stocks = Stock.objects.filter(~Q(seller_id=user_id), price__gte=min, price__lte=max)
             elif search is not None and min is None and faculty is None:
-                stocks = Stock.objects.filter(book__name__icontains=search)
+                stocks = Stock.objects.filter(~Q(seller_id=user_id), book__name__icontains=search)
             elif search is None and min is not None and faculty is not None:
-                stocks = Stock.objects.filter(price__gte=min, price__lte=max, book__faculty__name=faculty)
+                stocks = Stock.objects.filter(~Q(seller_id=user_id), price__gte=min, price__lte=max, book__faculty__name=faculty)
             elif search is not None and min is None and faculty is not None:
-                stocks = Stock.objects.filter(book__name__icontains=search, book__faculty__name=faculty)
+                stocks = Stock.objects.filter(~Q(seller_id=user_id), book__name__icontains=search, book__faculty__name=faculty)
             elif search is not None and min is not None and faculty is None:
-                stocks = Stock.objects.filter(price__gte=min, price__lte=max, book__name__icontains=search)
+                stocks = Stock.objects.filter(~Q(seller_id=user_id), price__gte=min, price__lte=max, book__name__icontains=search)
             else:
-                stocks = Stock.objects.filter(price__gte=min, price__lte=max,
+                stocks = Stock.objects.filter(~Q(seller_id=user_id), price__gte=min, price__lte=max,
                                               book__name__icontains=search, book__faculty__name=faculty)
             serializer = AllStockSerializer(stocks, many=True)
             data = json.loads(json.dumps(serializer.data))
+            print(data)
             for x in data:
                 for key in x['book'].keys():
                     x[key] = x['book'][key]
                     x['seller_username'] = Account.objects.get(user_id=x['seller']).username
                 del x['book']
             return Response(data)
-        # state = self.request.query_params.get('state', None)
-        # if state == 'sell':
-        #     stocks = Stock.objects.filter(seller=userID)
-        #     serializer = AllStockSerializer(stocks, many=True)
-        #     data = json.loads(json.dumps(serializer.data))
-        #     for x in data:
-        #         for key in x['book'].keys():
-        #             x[key] = x['book'][key]
-        #         del x['book']
-        #     return Response(data)
-        # elif state == 'buy':
-        #     stocks = Stock.objects.exclude(seller_id=userID)
-        #     serializer = AllStockSerializer(stocks, many=True)
-        #     data = json.loads(json.dumps(serializer.data))
-        #     for x in data:
-        #         for key in x['book'].keys():
-        #             x[key] = x['book'][key]
-        #         del x['book']
-        #     return Response(data)
-        # elif state == 'all':
-        #     if search is None and faculty is None:
-        #         stocks = Stock.objects.all()  # .prefetch_related('book')
-        #         serializer = AllStockSerializer(stocks, many=True)
-        #         data = json.loads(json.dumps(serializer.data))
-        #         for x in data:
-        #             for key in x['book'].keys():
-        #                 x[key] = x['book'][key]
-        #                 x['seller_username'] = Account.objects.get(user_id=x['seller']).username
-        #             del x['book']
-        #         return Response(data)
-        #     elif search is not None and faculty is None:
-        #         stocks = Stock.objects.filter(book__name__icontains=search)  # .prefetch_related('book')
-        #         serializer = AllStockSerializer(stocks, many=True)
-        #         data = json.loads(json.dumps(serializer.data))
-        #         for x in data:
-        #             for key in x['book'].keys():
-        #                 x[key] = x['book'][key]
-        #                 x['seller_username'] = Account.objects.get(user_id=x['seller']).username
-        #             del x['book']
-        #         return Response(data)
-        #     elif search is None and faculty is not None:
-        #         stocks = Stock.objects.filter(book__faculty__name=faculty)  # .prefetch_related('book')
-        #         serializer = AllStockSerializer(stocks, many=True)
-        #         data = json.loads(json.dumps(serializer.data))
-        #         for x in data:
-        #             for key in x['book'].keys():
-        #                 x[key] = x['book'][key]
-        #                 x['seller_username'] = Account.objects.get(user_id=x['seller']).username
-        #             del x['book']
-        #         return Response(data)
-        #     else:
-        #         stocks = Stock.objects.filter(book__name__icontains=search, book__faculty=faculty)  # .prefetch_related('book')
-        #         serializer = AllStockSerializer(stocks, many=True)
-        #         data = json.loads(json.dumps(serializer.data))
-        #         for x in data:
-        #             for key in x['book'].keys():
-        #                 x[key] = x['book'][key]
-        #                 x['seller_username'] = Account.objects.get(user_id=x['seller']).username
-        #             del x['book']
-        #         return Response(data)
-        # else:
-        #     stockID = self.request.query_params.get('stockID', None)
-        #     if stockID is not None:
-        #         stock = Stock.objects.get(id=stockID)
-        #         serializer = StockSerializerStockID(stock)
-        #         data = json.loads(json.dumps(serializer.data))
-        #         for key in data['book'].keys():
-        #             data[key] = data['book'][key]
-        #         del data['book']
-        #         return Response(data)
-        #     else:
-        #         return Response(f"StockID: None, BAD REQUEST", status=status.HTTP_400_BAD_REQUEST)
 
     def post(self, arg):
-        user = self.request.user
-        serializer = StockSerializer(data=self.request.data)
+        try:
+            user = self.request.user
+        except:
+            return Response('error', status=status.HTTP_401_UNAUTHORIZED)
 
-        if serializer.is_valid():
-            if serializer.validated_data['seller'] == user:
-                serializer.save()
-                return Response(serializer.data, status=status.HTTP_201_CREATED)
-            else:
-                return Response("ACCESS DENIED!", status=status.HTTP_403_FORBIDDEN)
-        else:
-            return Response(f"{serializer.errors}, BAD REQUEST", status=status.HTTP_400_BAD_REQUEST)
+        try:
+            data = self.request.data
+            filename = data['filename']
+            file = ContentFile(base64.b64decode(data['image']), name=filename)
+            stock = Stock()
+            stock.image = file
+            stock.seller = Account.objects.get(user_id=data['seller'])
+            stock.book = Book.objects.get(id=data['book'])
+            stock.price = data['price']
+            stock.edition = data['edition']
+            stock.printno = data['printno']
+            stock.description = data['description']
+            stock.save()
+            return Response('success', status=status.HTTP_201_CREATED)
+        except:
+            return Response('error', status=status.HTTP_400_BAD_REQUEST)
+
 
     def put(self, arg):
         stock_id = self.request.query_params.get('stockID', None)
@@ -317,6 +258,42 @@ class Stocks(APIView):
             return Response("StockID: None, BAD REQUEST", status=status.HTTP_400_BAD_REQUEST)
 
 
+class DemandAcceptor(APIView):
+    def post(self, arg):
+        map = self.request.data
+        stock_id = map['stock_id']
+        print(map)
+        demands = Demand.objects.filter(stock_id=stock_id)
+        demands.delete()
+        # print(demands['seller'])
+        trade = Trade()
+        trade.book = Book.objects.get(id=map['bookId'])
+        trade.seller = Account.objects.get(user_id=map['seller'])
+        trade.buyer = Account.objects.get(user_id=map['client'])
+        trade.image = map['image']
+        trade.state = map['state']
+        trade.description = map['description']
+        trade.price = map['price']
+        trade.save()
+        stock = Stock.objects.get(id=stock_id)
+        stock.delete()
+        # print('trade is: ', trade)
+        # demands = Demand.objects.filter(seller_id=map['seller'])
+        # demands.delete()
+        return Response('deleted', status=status.HTTP_200_OK)
+
+
+class DismissReserve(APIView):
+    def delete(self, arg):
+        tradeId = self.request.query_params.get('tradeId', None)
+        if tradeId is not None:
+            trade = Trade.objects.get(id=tradeId)
+            print(trade)
+            return Response('deleted successfully', status=status.HTTP_200_OK)
+        else:
+            return Response('please send tradeId', status=status.HTTP_400_BAD_REQUEST)
+
+
 @permission_classes((IsAuthenticated,))
 class Demands(APIView):
     def get(self, arg):
@@ -331,14 +308,15 @@ class Demands(APIView):
             elif state == 'seller':
                 demands = Demand.objects.filter(seller=user)
             elif state == 'all':
-                demands = Demand.objects.all()
+                demands = Demand.objects.filter(Q(client=user) | Q(seller=user))
             else:
                 return Response(f"State: Invalid state, BAD REQUEST!", status=status.HTTP_400_BAD_REQUEST)
             serializer = DemandSerializer(demands, many=True)
+            # return Response(serializer.data, status=status.HTTP_200_OK)
             data = json.loads(json.dumps(serializer.data))
             for x in data:
-                x['seller_username'] = Account.objects.get(id=x['seller']).username
-                x['client_username'] = Account.objects.get(id=x['client']).username
+                x['seller_username'] = Account.objects.get(user_id=x['seller']).username
+                x['client_username'] = Account.objects.get(user_id=x['client']).username
                 for key in x['book'].keys():
                     x[key] = x['book'][key]
                 del x['book']
@@ -436,6 +414,8 @@ class Demands(APIView):
 
 @permission_classes((IsAuthenticated,))
 class Trades(APIView):
+    # def delete_demands(self, seller_id, client_id, book_id):
+
     def get(self, arg):
         user = self.request.user
         trade_id = self.request.query_params.get('tradeID', None)
@@ -447,7 +427,16 @@ class Trades(APIView):
             if trade is not None:
                 if trade.seller == user or trade.buyer == user:
                     serializer = TradeSerializer(trade)
-                    return Response(serializer.data, status=status.HTTP_200_OK)
+                    data = json.loads(json.dumps(serializer.data))
+                    map = data['book']
+                    keys = list(map.keys())
+                    values = list(map.values())
+                    data['seller_username'] = Account.objects.get(user_id=data['seller']).username
+                    data['client_username'] = Account.objects.get(user_id=data['buyer']).username
+                    for x in range(0, len(keys)):
+                        data[keys[x]] = values[x]
+                    del data['book']
+                    return Response(data, status=status.HTTP_200_OK)
                 else:
                     return Response("ACCESS DENIED", status=status.HTTP_403_FORBIDDEN)
             else:
@@ -474,14 +463,21 @@ class Trades(APIView):
                         del x['book']
                     return Response(data, status=status.HTTP_200_OK)
                 elif state == 'all':
-                    trades = Trade.objects.filter(Q(seller=user) | Q(buyer=user))
+                    # trades = Trade.objects.filter(Q(seller=user) | Q(buyer=user))
                     trades = Trade.objects.filter(Q(seller=user) | Q(buyer=user))
                     serializer = TradeSerializer(trades, many=True)
                     data = json.loads(json.dumps(serializer.data))
+                    # for x in data:
+                    #     for key in x['book'].keys():
+                    #         x[key] = x['book'][key]
+                    #     del x['book']
                     for x in data:
+                        x['seller_username'] = Account.objects.get(user_id=x['seller']).username
+                        x['client_username'] = Account.objects.get(user_id=x['buyer']).username
                         for key in x['book'].keys():
                             x[key] = x['book'][key]
                         del x['book']
+                    # return Response(data, status=status.HTTP_200_OK)
                     return Response(data, status=status.HTTP_200_OK)
                 else:
                     return Response(f"INVALID State: {state}, BAD REQUEST", status=status.HTTP_400_BAD_REQUEST)
@@ -515,9 +511,13 @@ class Trades(APIView):
 
     def put(self, arg):
         trade_id = self.request.query_params.get('tradeID', None)
+        map = self.request.data
+        state = map['state']
+        print(state)
         if trade_id is not None:
             try:
                 trade = Trade.objects.get(id=trade_id)
+                print(trade)
             except Trade.DoesNotExist:
                 trade = None
             if trade is not None:
@@ -526,15 +526,9 @@ class Trades(APIView):
                 if serializer.is_valid():
                     if serializer.validated_data['seller'] == user:
                         if not trade.state:
-                            if serializer.validated_data['state'] == True and \
-                                    serializer.validated_data['trade'] is not None:
-                                trade.state = serializer.validated_data['state']
-                                trade.trade = serializer.validated_data['trade']
-                                trade.description = serializer.validated_data['description']
-                                trade.save()
-                                return Response(serializer.data, status=status.HTTP_200_OK)
-                            else:
-                                return Response(f"NO CHANGES APPLIED", status=status.HTTP_200_OK)
+                            trade.state = state
+                            trade.save()
+                            return Response(serializer.data, status=status.HTTP_200_OK)
                         else:
                             return Response("ACCESS DENIED, TRADE DONE", status=status.HTTP_403_FORBIDDEN)
                     else:
@@ -555,14 +549,8 @@ class Trades(APIView):
                 trade = None
             if trade is not None:
                 user = self.request.user
-                if trade.seller == user:
-                    if not trade.state:
-                        trade.delete()
-                        return Response(f"Trade: {trade_id}, DELETED", status=status.HTTP_204_NO_CONTENT)
-                    else:
-                        return Response("ACCESS DENIED, TRADE DONE", status=status.HTTP_403_FORBIDDEN)
-                else:
-                    return Response("ACCESS DENIED", status=status.HTTP_403_FORBIDDEN)
+                print(trade)
+                return Response('deleted successfully', status=status.HTTP_200_OK)
             else:
                 return Response(f"TradeID={trade_id}, NOT FOUND", status=status.HTTP_404_NOT_FOUND)
         else:
@@ -707,29 +695,29 @@ class ReportProblems(APIView):
     def post(self, arg):
         trade_id = self.request.query_params.get('tradeID', None)
         user = self.request.user
-
+        print(self.request.data)
         if trade_id is not None:
             try:
+                accuser_id = self.request.data['accuser']
+                accuser = Account.objects.get(user_id=accuser_id)
+            except:
+                return Response('couldn\'t find accuser', status=status.HTTP_404_NOT_FOUND)
+            try:
+                accused_id = self.request.data['accused']
+                accused = Account.objects.get(user_id=accused_id)
+            except:
+                return Response('couldn\'t find accused', status=status.HTTP_404_NOT_FOUND)
+            try:
                 trade = Trade.objects.get(id=trade_id)
-                # print("="*50 ,f"Trade: {Trade.objects.get(id=tradeID)}")
-                if trade.state:
-                    if trade.seller == user or trade.buyer == user:
-                        serializer = ReportProblemSerializer(data=self.request.data)
-                        # print("=" * 50, f"ENTER")
-                        if serializer.is_valid():
-                            if serializer.validated_data['accuser'] == user:
-                                serializer.save()
-                                return Response(serializer.data, status=status.HTTP_200_OK)
-                            else:
-                                return Response(f"Accuser != Req.User, BAD REQUEST", status=status.HTTP_400_BAD_REQUEST)
-                        else:
-                            return Response(f"{serializer.errors}, BAD REQUEST", status=status.HTTP_400_BAD_REQUEST)
-                    else:
-                        return Response(f"ACCESS DENIED", status=status.HTTP_403_FORBIDDEN)
-                else:
-                    return Response(f"ACCESS DENIED, TRADE DONE", status=status.HTTP_403_FORBIDDEN)
-            except Trade.DoesNotExist:
-                return Response(f"Trade: {trade_id}, NOT FOUND", status=status.HTTP_404_NOT_FOUND)
+            except:
+                return Response('couldn\'t find trade', status=status.HTTP_404_NOT_FOUND)
+            report = ReportProblem()
+            report.accuser = accuser
+            report.accused = accused
+            report.trade = trade
+            report.text = self.request.data['text']
+            report.save()
+            return Response('success', status=status.HTTP_201_CREATED)
         else:
             return Response("TradeID: None, BAD REQUEST", status=status.HTTP_400_BAD_REQUEST)
 

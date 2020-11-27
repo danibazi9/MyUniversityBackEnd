@@ -44,29 +44,37 @@ class Stock(models.Model):
     seller = models.ForeignKey(Account, on_delete=models.CASCADE)
     upload = models.DateTimeField(auto_now_add=True)
     update = models.DateTimeField(auto_now=True)
-
-    class Meta:
-        unique_together = ('book', 'seller')
+    file = models.FileField(blank=True, null=True)
+    # class Meta:
+    #     unique_together = ('book', 'seller')
 
     def __str__(self):
         return f"Book: {self.book.__str__()}; Seller: {self.seller.__str__()}"
 
 
 class Trade(models.Model):
+    # book = models.ForeignKey(Book, on_delete=models.CASCADE)
+    # edition = models.IntegerField()
+    # printno = models.IntegerField()
+    # image = models.ImageField(upload_to='images/', blank=True)
+    # price = models.IntegerField()
+    # description = models.CharField(max_length=1024, null=True)
+    #
+    # seller = models.ForeignKey(Account, on_delete=models.CASCADE, related_name='seller')
+    # buyer = models.ForeignKey(Account, on_delete=models.CASCADE, related_name='buyer')
+    # upload = models.DateTimeField()
+    # update = models.DateTimeField()
+    # reserve = models.DateTimeField(auto_now_add=True)
+    # trade = models.DateTimeField(blank=True, null=True)
+    # state = models.BooleanField(default=False)
     book = models.ForeignKey(Book, on_delete=models.CASCADE)
-    edition = models.IntegerField()
-    printno = models.IntegerField()
-    image = models.ImageField(upload_to='images/', blank=True)
-    price = models.IntegerField()
-    description = models.CharField(max_length=1024, null=True)
-
+    image = models.URLField(null=True, blank=True)
     seller = models.ForeignKey(Account, on_delete=models.CASCADE, related_name='seller')
     buyer = models.ForeignKey(Account, on_delete=models.CASCADE, related_name='buyer')
-    upload = models.DateTimeField()
-    update = models.DateTimeField()
-    reserve = models.DateTimeField(auto_now_add=True)
-    trade = models.DateTimeField(blank=True, null=True)
     state = models.BooleanField(default=False)
+    trade = models.DateTimeField(auto_now_add=True)
+    price = models.IntegerField()
+    description = models.CharField(max_length=1024, null=True)
 
     class Meta:
         unique_together = ('book', 'seller', 'buyer')
@@ -76,10 +84,15 @@ class Trade(models.Model):
 
 
 class Demand(models.Model):
+    bookId = models.IntegerField(default=0)
     book = models.ForeignKey(Book, on_delete=models.CASCADE)
+    stock_id = models.IntegerField()
     seller = models.ForeignKey(Account, on_delete=models.CASCADE, related_name='DemandSeller')
     client = models.ForeignKey(Account, on_delete=models.CASCADE, related_name='DemandClient')
     imageUrl = models.URLField(blank=True, null=True)
+    price = models.IntegerField()
+    description = models.TextField(blank=True)
+    # stockId = models.IntegerField(null=True, blank=True)
 
     class Meta:
         unique_together = ('book', 'seller', 'client')
@@ -94,8 +107,8 @@ class ReportProblem(models.Model):
     trade = models.ForeignKey(Trade, on_delete=models.CASCADE)
     text = models.CharField(max_length=1024)
 
-    class Meta:
-        unique_together = ('accuser', 'accused', 'trade')
+    # class Meta:
+    #     unique_together = ('accuser', 'accused', 'trade')
 
     def __str__(self):
         return f"Accuser: {self.accuser.username}, Accused: {self.accused.username}, Trade: {self.trade.book.name}"
