@@ -9,6 +9,9 @@ class Food(models.Model):
     image = models.ImageField(upload_to='images/', blank=True)
     cost = models.IntegerField(default=0)
 
+    def __str__(self):
+        return self.name + ", " + str(self.cost) + "R"
+
 
 class Serve(models.Model):
     food_id = models.ForeignKey(Food, on_delete=models.CASCADE)
@@ -16,4 +19,9 @@ class Serve(models.Model):
     start_serve_time = models.TimeField()
     end_serve_time = models.TimeField()
     date = models.DateField(auto_now_add=True)
-    count = models.IntegerField(default=0)
+    remaining_count = models.IntegerField(default=0)
+
+    def __str__(self):
+        return "Seller: " + self.seller_id.username + ", Food: " + \
+               self.food_id.name + ", Remaining count: " + str(self.remaining_count)
+
