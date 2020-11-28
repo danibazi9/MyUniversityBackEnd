@@ -19,7 +19,7 @@ class Serve(models.Model):
     seller = models.ForeignKey(Account, on_delete=models.CASCADE)
     start_serve_time = models.TimeField()
     end_serve_time = models.TimeField()
-    date = models.DateField(auto_now_add=True, unique=True)
+    date = models.DateField(auto_now_add=True)
     remaining_count = models.IntegerField()
     max_count = models.IntegerField()
 
