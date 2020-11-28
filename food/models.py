@@ -14,22 +14,26 @@ class Food(models.Model):
 
 
 class Serve(models.Model):
-    food_id = models.ForeignKey(Food, on_delete=models.CASCADE)
-    seller_id = models.ForeignKey(Account, on_delete=models.CASCADE)
+    serve_id = models.AutoField(primary_key=True)
+    food = models.ForeignKey(Food, on_delete=models.CASCADE)
+    seller = models.ForeignKey(Account, on_delete=models.CASCADE)
     start_serve_time = models.TimeField()
     end_serve_time = models.TimeField()
     date = models.DateField(auto_now_add=True)
-    remaining_count = models.IntegerField(default=0)
+    remaining_count = models.IntegerField()
 
     def __str__(self):
-        return "Seller: " + self.seller_id.username + ", Food: " + \
-               self.food_id.name + ", Remaining count: " + str(self.remaining_count)
+        return "Seller: " + self.seller.username + ", Food: " + \
+               self.food.name + ", Remaining count: " + str(self.remaining_count)
 
 
 class Order(models.Model):
-    customer_id = models.ForeignKey(Account, on_delete=models.CASCADE)
-    food_id = models.ForeignKey(Food, on_delete=models.CASCADE)
-    time = models.DateTimeField(auto_now_add=True)
+    order_id = models.AutoField(primary_key=True)
+    customer = models.ForeignKey(Account, on_delete=models.CASCADE)
+    total_price = models.FloatField(default=0)
+    ordered_items = models.CharField(max_length=300)
+    last_update = models.DateTimeField(auto_now=True)
 
     def __str__(self):
-        return "Customer: " + self.customer_id.username + ", Food: " + self.food_id.name
+        return "Customer: " + self.customer.username + \
+               ", Total: " + str(self.total_price) + "R, Ordered: " + self.ordered_items
