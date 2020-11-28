@@ -21,7 +21,7 @@ class Serve(models.Model):
     end_serve_time = models.TimeField()
     date = models.DateField(auto_now_add=True)
     remaining_count = models.IntegerField()
-    max_count = models.IntegerField
+    max_count = models.IntegerField()
 
     def __str__(self):
         return "Seller: " + self.seller.username + ", Food: " + \
