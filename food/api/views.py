@@ -361,11 +361,11 @@ class EditOrder(APIView):
                 stop_index = order_item.split(",")[1].find("*")
                 before_count = int(order_item.split(",")[1][start_index + 1:stop_index].strip())
 
-                if serve_to_choose.remaining_count + before_count > serve_to_choose.max_count:
-                    return Response(f"ERROR: Out of capacity! serve_id {serve_id} has only "
-                                    f"{serve_to_choose.remaining_count} food to serve, "
-                                    f"that {before_count} of them are reserved by you",
-                                    status=status.HTTP_406_NOT_ACCEPTABLE)
+                # if serve_to_choose.remaining_count + before_count > serve_to_choose.max_count:
+                #     return Response(f"ERROR: Out of capacity! serve_id {serve_id} has only "
+                #                     f"{serve_to_choose.remaining_count} food to serve, "
+                #                     f"that {before_count} of them are reserved by you",
+                #                     status=status.HTTP_406_NOT_ACCEPTABLE)
 
                 serveid_before_count_dict[serve_to_choose.food.name] = before_count
             serveid_count_dict[serve_id] = count
