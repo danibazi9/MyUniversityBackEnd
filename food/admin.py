@@ -15,7 +15,8 @@ admin.site.register(Food, FoodAdmin)
 
 
 class ServeAdmin(admin.ModelAdmin):
-    list_display = ['serve_id', 'food', 'seller', 'start_serve_time', 'end_serve_time', 'date', 'remaining_count']
+    list_display = ['serve_id', 'food', 'seller', 'start_serve_time', 'end_serve_time',
+                    'date', 'remaining_count', 'max_count']
     search_fields = ['food', 'seller']
     list_filter = ['food', 'seller', 'date']
 
@@ -27,9 +28,9 @@ admin.site.register(Serve, ServeAdmin)
 
 
 class OrderAdmin(admin.ModelAdmin):
-    list_display = ['order_id', 'customer', 'total_price', 'ordered_items', 'last_update']
+    list_display = ['order_id', 'customer', 'total_price', 'ordered_items', 'last_update', 'done']
     search_fields = ['customer', 'ordered_items']
-    list_filter = ['customer']
+    list_filter = ['customer', 'done']
 
     class Meta:
         model = Order

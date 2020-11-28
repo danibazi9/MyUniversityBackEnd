@@ -21,6 +21,7 @@ class Serve(models.Model):
     end_serve_time = models.TimeField()
     date = models.DateField(auto_now_add=True)
     remaining_count = models.IntegerField()
+    max_count = models.IntegerField
 
     def __str__(self):
         return "Seller: " + self.seller.username + ", Food: " + \
@@ -33,6 +34,7 @@ class Order(models.Model):
     total_price = models.FloatField(default=0)
     ordered_items = models.CharField(max_length=300)
     last_update = models.DateTimeField(auto_now=True)
+    done = models.BooleanField(default=False)
 
     def __str__(self):
         return "Customer: " + self.customer.username + \
