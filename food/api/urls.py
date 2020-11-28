@@ -13,4 +13,5 @@ urlpatterns = [
     path('user/order/edit/', views.EditOrder.as_view()),
     path('user/order/properties/', views.OrderProperties.as_view()),
     path('user/order/delete/', views.DeleteOrder.as_view()),
+    path('user/order/history/', views.OrderHistory.as_view()),
 ]
