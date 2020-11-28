@@ -141,3 +141,47 @@ class AdminServes(APIView):
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         else:
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+@permission_classes((IsAuthenticated,))
+class UserServesAll(APIView):
+    def get(self, arg):
+        try:
+            user_id = self.request.user.user_id
+        except:
+            return Response("Authentication Error! Invalid token", status=status.HTTP_400_BAD_REQUEST)
+
+        serves = Serve.objects.filter(date=datetime.datetime.now())
+        serializer = UserAllServeSerializer(serves, many=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
+
+@permission_classes((IsAuthenticated,))
+class UserServes(APIView):
+    def get(self, arg):
+        try:
+            user_id = self.request.user.user_id
+        except:
+            return Response("Authentication Error! Invalid token", status=status.HTTP_400_BAD_REQUEST)
+
+        start_serve_time = self.request.query_params.get('start_time', None)
+        end_serve_time = self.request.query_params.get('end_time', None)
+
+        if start_serve_time is not None and end_serve_time is not None:
+            serves = Serve.objects.filter(date=datetime.datetime.now(),
+                                          start_serve_time__lte=start_serve_time,
+                                          end_serve_time__gte=end_serve_time)
+
+            serializer = UserServeSerializer(serves, data=self.request.data, many=True)
+            if serializer.is_valid():
+                data = json.loads(json.dumps(serializer.data))
+                for x in data:
+                    for key in x['food'].keys():
+                        x[key] = x['food'][key]
+                    del x['food']
+                return Response(data, status=status.HTTP_200_OK)
+            else:
+                return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        else:
+            return Response("Start_time / End_time: None, BAD REQUEST", status=status.HTTP_400_BAD_REQUEST)
+
