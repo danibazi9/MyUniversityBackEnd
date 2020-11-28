@@ -219,3 +219,70 @@ class OrderProperties(APIView):
         else:
             return Response("Order_id: None, BAD REQUEST", status=status.HTTP_400_BAD_REQUEST)
 
+
+@permission_classes((IsAuthenticated,))
+class AddOrder(APIView):
+    def post(self, args):
+        try:
+            customer = self.request.user
+        except:
+            return Response(f"Authentication Error! Invalid token", status=status.HTTP_400_BAD_REQUEST)
+
+        request_body = json.loads(self.request.body)
+
+        if 'food_list' not in request_body:
+            return Response("BAD REQUEST, food_list required!", status=status.HTTP_400_BAD_REQUEST)
+
+        food_list = request_body['food_list']
+
+        if len(food_list) == 0:
+            return Response("BAD REQUEST, food_list is empty!", status=status.HTTP_400_BAD_REQUEST)
+
+        serveid_count_dict = {}
+        for food in food_list:
+            if 'serve_id' not in food:
+                return Response("BAD REQUEST, serve_id required in food_list!", status=status.HTTP_400_BAD_REQUEST)
+            if 'count' not in food:
+                return Response("BAD REQUEST, count required in food_list!", status=status.HTTP_400_BAD_REQUEST)
+
+            serve_id = food['serve_id']
+            count = food['count']
+
+            try:
+                serve_to_choose = Serve.objects.get(serve_id=serve_id)
+
+                end_serve_time = serve_to_choose.end_serve_time
+                serve_date = serve_to_choose.date
+                time_of_serve = datetime.datetime(year=serve_date.year, month=serve_date.month,
+                                                  day=serve_date.day, hour=end_serve_time.hour,
+                                                  minute=end_serve_time.minute, second=end_serve_time.second)
+
+                if time_of_serve.timestamp() < datetime.datetime.now().timestamp():
+                    return Response(f"Serve with serve_id {serve_id} is for the past, you can't reserve any food!")
+            except Serve.DoesNotExist:
+                return Response(f"Serve with serve_id {serve_id} NOT FOUND!", status=status.HTTP_404_NOT_FOUND)
+
+            if count > serve_to_choose.remaining_count:
+                return Response(f"No more food! serve_id {serve_id} has only "
+                                f"{serve_to_choose.remaining_count} food to serve",
+                                status=status.HTTP_406_NOT_ACCEPTABLE)
+
+            serveid_count_dict[serve_id] = count
+
+        ordered_items_list = []
+        total_price = 0
+
+        for key in serveid_count_dict.keys():
+            serve_to_reduce_count = Serve.objects.get(serve_id=key)
+            serve_to_reduce_count.remaining_count -= serveid_count_dict[key]
+            serve_to_reduce_count.save()
+            ordered_items_list.append(f"{serve_to_reduce_count.food.name}, "
+                                      f"Price: {serveid_count_dict[key]} * {serve_to_reduce_count.food.cost}R")
+            total_price += serveid_count_dict[key] * serve_to_reduce_count.food.cost
+
+        Order.objects.create(customer=customer,
+                             total_price=total_price,
+                             ordered_items=" + ".join(ordered_items_list))
+        return Response("Order food completed successfully!", status=status.HTTP_200_OK)
+
+
