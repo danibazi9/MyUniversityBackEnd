@@ -382,3 +382,51 @@ class EditOrder(APIView):
         return Response("Order food has edited successfully!", status=status.HTTP_200_OK)
 
 
+@permission_classes((IsAuthenticated,))
+class DeleteOrder(APIView):
+    def delete(self, arg):
+        try:
+            customer = self.request.user
+        except:
+            return Response(f"Authentication Error! Invalid token", status=status.HTTP_400_BAD_REQUEST)
+
+        order_id = self.request.query_params.get('order_id', None)
+        if order_id is not None:
+            try:
+                order_to_delete = Order.objects.get(order_id=order_id)
+            except Order.DoesNotExist:
+                return Response(f"order_id={order_id}, NOT FOUND", status=status.HTTP_404_NOT_FOUND)
+        else:
+            return Response("order_id: None, BAD REQUEST ", status=status.HTTP_400_BAD_REQUEST)
+
+        serveid_before_count_dict = {}
+        for order_item in order_to_delete.ordered_items.split(" + "):
+            try:
+                serve_to_choose = Serve.objects.get(food__name=order_item.split(",")[0])
+            except Serve.DoesNotExist:
+                return Response(f"Serve for food {order_item.split(',')[0]} NOT FOUND!",
+                                status=status.HTTP_404_NOT_FOUND)
+
+            end_serve_time = serve_to_choose.end_serve_time
+            serve_date = serve_to_choose.date
+            time_of_serve = datetime.datetime(year=serve_date.year, month=serve_date.month,
+                                              day=serve_date.day, hour=end_serve_time.hour,
+                                              minute=end_serve_time.minute, second=end_serve_time.second)
+
+            if time_of_serve.timestamp() < datetime.datetime.now().timestamp():
+                return Response(f"ERROR: Serve of food {order_item.split(',')[0]} has done in the past, "
+                                f"We can't cancel your reservation!", status=status.HTTP_406_NOT_ACCEPTABLE)
+
+            start_index = order_item.split(",")[1].find(":")
+            stop_index = order_item.split(",")[1].find("*")
+            before_count = int(order_item.split(",")[1][start_index + 1:stop_index].strip())
+
+            serveid_before_count_dict[serve_to_choose.serve_id] = before_count
+
+        for key in serveid_before_count_dict.keys():
+            serve_to_increase_count = Serve.objects.get(serve_id=key)
+            serve_to_increase_count.remaining_count += serveid_before_count_dict[key]
+            serve_to_increase_count.save()
+
+        order_to_delete.delete()
+        return Response(f"order_id: {order_id}, DELETED", status=status.HTTP_200_OK)
