@@ -185,3 +185,37 @@ class UserServes(APIView):
         else:
             return Response("Start_time / End_time: None, BAD REQUEST", status=status.HTTP_400_BAD_REQUEST)
 
+
+@permission_classes((IsAuthenticated,))
+class OrdersAll(APIView):
+    def get(self, arg):
+        try:
+            customer_id = self.request.user.user_id
+        except:
+            return Response(f"Authentication Error! Invalid token", status=status.HTTP_400_BAD_REQUEST)
+
+        orders = Order.objects.filter(customer=customer_id)
+        serializer = OrderSerializer(orders, many=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
+
+@permission_classes((IsAuthenticated,))
+class OrderProperties(APIView):
+    def get(self, args):
+        try:
+            user_id = self.request.user.user_id
+        except:
+            return Response(f"Authentication Error! Invalid token", status=status.HTTP_400_BAD_REQUEST)
+
+        order_id = self.request.query_params.get('orderID', None)
+        if order_id is not None:
+            try:
+                order = Order.objects.get(order_id=order_id)
+            except Order.DoesNotExist:
+                return Response(f"Order with order_id {order_id} NOT FOUND!", status=status.HTTP_404_NOT_FOUND)
+
+            serializer = OrderSerializer(order)
+            return Response(serializer.data, status=status.HTTP_200_OK)
+        else:
+            return Response("Order_id: None, BAD REQUEST", status=status.HTTP_400_BAD_REQUEST)
+
