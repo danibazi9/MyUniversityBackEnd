@@ -35,7 +35,7 @@ class Foods(APIView):
                 food = Food.objects.get(food_id=food_id)
             except Food.DoesNotExist:
                 return Response(f"food_id={food_id}, NOT FOUND", status=status.HTTP_404_NOT_FOUND)
-            serializer = FoodSerializer(food, data=self.request.data)
+            serializer = FoodSerializer(food)
             return Response(serializer.data, status=status.HTTP_200_OK)
         else:
             return Response("food_id: None, BAD REQUEST ", status=status.HTTP_400_BAD_REQUEST)
@@ -169,8 +169,8 @@ class UserServes(APIView):
 
         if start_serve_time is not None and end_serve_time is not None:
             serves = Serve.objects.filter(date=datetime.datetime.now(),
-                                          start_serve_time__lte=start_serve_time,
-                                          end_serve_time__gte=end_serve_time)
+                                          start_serve_time__gte=start_serve_time,
+                                          end_serve_time__lte=end_serve_time)
 
             serializer = UserServeSerializer(serves, data=self.request.data, many=True)
             if serializer.is_valid():
@@ -207,7 +207,7 @@ class OrderProperties(APIView):
         except:
             return Response(f"Authentication Error! Invalid token", status=status.HTTP_400_BAD_REQUEST)
 
-        order_id = self.request.query_params.get('orderID', None)
+        order_id = self.request.query_params.get('order_id', None)
         if order_id is not None:
             try:
                 order = Order.objects.get(order_id=order_id)
