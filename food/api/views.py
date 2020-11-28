@@ -315,6 +315,7 @@ class EditOrder(APIView):
 
         serveid_count_dict = {}
         serveid_before_count_dict = {}
+
         for food in food_list:
             if 'serve_id' not in food:
                 return Response("BAD REQUEST, serve_id required in food_list!", status=status.HTTP_400_BAD_REQUEST)
@@ -325,10 +326,10 @@ class EditOrder(APIView):
             count = food['count']
 
             try:
-                serve_to_choose = Serve.objects.get(serve_id=serve_id)
+                serve_to_edit = Serve.objects.get(serve_id=serve_id)
 
-                end_serve_time = serve_to_choose.end_serve_time
-                serve_date = serve_to_choose.date
+                end_serve_time = serve_to_edit.end_serve_time
+                serve_date = serve_to_edit.date
                 time_of_serve = datetime.datetime(year=serve_date.year, month=serve_date.month,
                                                   day=serve_date.day, hour=end_serve_time.hour,
                                                   minute=end_serve_time.minute, second=end_serve_time.second)
@@ -338,43 +339,53 @@ class EditOrder(APIView):
             except Serve.DoesNotExist:
                 return Response(f"Serve with serve_id {serve_id} NOT FOUND!", status=status.HTTP_404_NOT_FOUND)
 
-            before_count = 0
-            dict_of_found = {}
             for order_item in order_to_edit.ordered_items.split(" + "):
-                dict_of_found[order_item.split(",")[0]] = False
-                if order_item.split(",")[0] == serve_to_choose.food.name:
-                    start_index = order_item.split(",")[1].find(":")
-                    stop_index = order_item.split(",")[1].find("*")
-                    before_count = int(order_item.split(",")[1][start_index + 1:stop_index].strip())
-                    dict_of_found[order_item.split(",")[0]] = True
-                    break
+                try:
+                    serve_to_choose = Serve.objects.get(food__name=order_item.split(",")[0])
 
-            for key in dict_of_found:
-                if not dict_of_found[key]:
-                    serve_to_increase_count = Serve.objects.get(food__name=key)
-                    serve_to_increase_count.remaining_count += count
-                    serve_to_increase_count.save()
+                    end_serve_time = serve_to_choose.end_serve_time
+                    serve_date = serve_to_choose.date
+                    time_of_serve = datetime.datetime(year=serve_date.year, month=serve_date.month,
+                                                      day=serve_date.day, hour=end_serve_time.hour,
+                                                      minute=end_serve_time.minute, second=end_serve_time.second)
 
-            if count > serve_to_choose.remaining_count + before_count:
-                return Response(f"No more food! serve_id {serve_id} has only "
-                                f"{serve_to_choose.remaining_count + before_count} food to serve, "
-                                f"that {before_count} of them are reserved by you",
-                                status=status.HTTP_406_NOT_ACCEPTABLE)
+                    if time_of_serve.timestamp() < datetime.datetime.now().timestamp():
+                        return Response(f"Serve for food {order_item.split(',')[0]} "
+                                        f"with serve_id {serve_id} is for the past, you can't edit your reserves!")
 
+                except Serve.DoesNotExist:
+                    return Response(f"Serve for food {order_item.split(',')[0]} NOT FOUND!",
+                                    status=status.HTTP_404_NOT_FOUND)
+
+                start_index = order_item.split(",")[1].find(":")
+                stop_index = order_item.split(",")[1].find("*")
+                before_count = int(order_item.split(",")[1][start_index + 1:stop_index].strip())
+
+                if serve_to_choose.remaining_count + before_count > serve_to_choose.max_count:
+                    return Response(f"ERROR: Out of capacity! serve_id {serve_id} has only "
+                                    f"{serve_to_choose.remaining_count} food to serve, "
+                                    f"that {before_count} of them are reserved by you",
+                                    status=status.HTTP_406_NOT_ACCEPTABLE)
+
+                serveid_before_count_dict[serve_to_choose.food.name] = before_count
             serveid_count_dict[serve_id] = count
-            serveid_before_count_dict[serve_id] = before_count
 
         ordered_items_list = []
         total_price = 0
 
+        for key in serveid_before_count_dict.keys():
+            serve_to_change = Serve.objects.get(food__name=key)
+            serve_to_change.remaining_count += serveid_before_count_dict[key]
+            serve_to_change.save()
+
         for key in serveid_count_dict.keys():
-            serve_to_reduce_count = Serve.objects.get(serve_id=key)
-            serve_to_reduce_count.remaining_count += serveid_before_count_dict[key]
-            serve_to_reduce_count.remaining_count -= serveid_count_dict[key]
-            serve_to_reduce_count.save()
-            ordered_items_list.append(f"{serve_to_reduce_count.food.name}, "
-                                      f"Price: {serveid_count_dict[key]} * {serve_to_reduce_count.food.cost}R")
-            total_price += serveid_count_dict[key] * serve_to_reduce_count.food.cost
+            serve_to_change = Serve.objects.get(serve_id=key)
+            serve_to_change.remaining_count -= serveid_count_dict[key]
+            serve_to_change.save()
+
+            ordered_items_list.append(f"{serve_to_change.food.name}, "
+                                      f"Price: {serveid_count_dict[key]} * {serve_to_change.food.cost}R")
+            total_price += serveid_count_dict[key] * serve_to_change.food.cost
 
         order_to_edit.ordered_items = " + ".join(ordered_items_list)
         order_to_edit.total_price = total_price
@@ -421,6 +432,10 @@ class DeleteOrder(APIView):
             stop_index = order_item.split(",")[1].find("*")
             before_count = int(order_item.split(",")[1][start_index + 1:stop_index].strip())
 
+            if serve_to_choose.remaining_count + before_count > serve_to_choose.max_count:
+                return Response(f"ERROR! Can't cancel the food {serve_to_choose.food.name} "
+                                f"with serve_id {serve_to_choose.serve_id} because out of maximum")
+
             serveid_before_count_dict[serve_to_choose.serve_id] = before_count
 
         for key in serveid_before_count_dict.keys():
@@ -430,3 +445,4 @@ class DeleteOrder(APIView):
 
         order_to_delete.delete()
         return Response(f"order_id: {order_id}, DELETED", status=status.HTTP_200_OK)
+
