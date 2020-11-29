@@ -13,6 +13,9 @@ class Food(models.Model):
 class Serve(models.Model):
     food_id = models.ForeignKey(Food, on_delete=models.CASCADE)
     seller_id = models.ForeignKey(Account, on_delete=models.CASCADE)
+    # start_time = models.TimeField()
+    # end_time = models.TimeField()
     time = models.TimeField()
     date = models.DateTimeField(auto_now_add=True)
     count = models.IntegerField()
+    # price = models.IntegerField()
