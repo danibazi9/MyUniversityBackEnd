@@ -268,6 +268,18 @@ class UserServes(APIView):
 
 
 @permission_classes((IsAuthenticated,))
+class AdminOrdersAll(APIView):
+    def get(self, arg):
+        orders = Order.objects.filter(last_update__date=timezone.now(), done=False)
+        serializer = AdminOrdersAllSerializer(orders, many=True)
+        data = json.loads(json.dumps(serializer.data))
+        for x in data:
+            x['customer_username'] = Account.objects.get(user_id=x['customer']).first_name + ' '+ Account.objects.get(user_id=x['customer']).last_name
+            x['customer_student_id'] = Account.objects.get(user_id=x['customer']).student_id
+        return Response(data, status=status.HTTP_200_OK)
+
+
+@permission_classes((IsAuthenticated,))
 class OrdersAll(APIView):
     def get(self, arg):
         try:
