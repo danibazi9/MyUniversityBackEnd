@@ -3,7 +3,7 @@ import json
 from django.core.files.base import ContentFile
 import base64
 import django.utils.timezone
-
+from django.db.models import Q
 from rest_framework import status
 from rest_framework.views import APIView
 from rest_framework.response import Response
@@ -108,11 +108,13 @@ class AdminServesAll(APIView):
     def get(self, arg):
         try:
             seller_id = self.request.user.user_id
+            date = self.request.query_params.get('date', str(timezone.now())[0:10])
+            print('date: ', date)
         except:
             return Response("Authentication Error! Invalid token", status=status.HTTP_400_BAD_REQUEST)
         try:
-            print(django.utils.timezone.now())
-            serves = Serve.objects.filter(seller=seller_id, date=timezone.now())
+            # print(django.utils.timezone.now())
+            serves = Serve.objects.filter(seller=seller_id, date=datetime.datetime.strptime(date, '%Y-%m-%d'))
         except:
             return Response("BAD REQUEST", status=status.HTTP_400_BAD_REQUEST)
         serializer = AdminAllServeSerializer(serves, many=True)
@@ -196,10 +198,10 @@ class AdminServes(APIView):
                 date = each['date']
                 count = each['count']
                 serve = Serve()
-                serve.date = datetime.strptime(date, '%Y-%m-%d')
+                serve.date = datetime.datetime.strptime(date, '%Y-%m-%d')
                 serve.food = Food.objects.get(food_id=food_id)
-                serve.start_serve_time = datetime.strptime(start_time, '%H:%M:%S')
-                serve.end_serve_time = datetime.strptime(end_time, '%H:%M:%S')
+                serve.start_serve_time = datetime.datetime.strptime(start_time, '%H:%M:%S')
+                serve.end_serve_time = datetime.datetime.strptime(end_time, '%H:%M:%S')
                 serve.seller = Account.objects.get(user_id=seller_id)
                 serve.max_count = count
                 serve.remaining_count = count
@@ -211,15 +213,15 @@ class AdminServes(APIView):
             return Response("BAD REQUEST", status=status.HTTP_400_BAD_REQUEST)
 
     # try:
-        #     serve = Serve.objects.get(seller=seller_id)
-        # except Serve.DoesNotExist:
-        #     return Response("BAD REQUEST", status=status.HTTP_400_BAD_REQUEST)
-        # serializer = AdminServeSerializer(serve, data=self.request.data)
-        # if serializer.is_valid():
-        #     serializer.save()
-        #     return Response(serializer.data, status=status.HTTP_201_CREATED)
-        # else:
-        #     return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+    #     serve = Serve.objects.get(seller=seller_id)
+    # except Serve.DoesNotExist:
+    #     return Response("BAD REQUEST", status=status.HTTP_400_BAD_REQUEST)
+    # serializer = AdminServeSerializer(serve, data=self.request.data)
+    # if serializer.is_valid():
+    #     serializer.save()
+    #     return Response(serializer.data, status=status.HTTP_201_CREATED)
+    # else:
+    #     return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
 @permission_classes((IsAuthenticated,))
@@ -270,12 +272,35 @@ class UserServes(APIView):
 @permission_classes((IsAuthenticated,))
 class AdminOrdersAll(APIView):
     def get(self, arg):
-        orders = Order.objects.filter(last_update__date=timezone.now(), done=False)
+        try:
+            search = self.request.query_params.get('search', None)
+        except:
+            return Response(f"No search was sent in params", status=status.HTTP_400_BAD_REQUEST)
+        if search is None or len(str(search)) == 0:
+            print('search: ', search)
+            orders = Order.objects.filter(last_update__date=timezone.now(), done=False)
+        else:
+            orders = Order.objects.filter(Q(last_update__date=timezone.now(), done=False),
+                                          Q(customer__first_name__icontains=search) | Q(
+                                              customer__last_name__icontains=search))
         serializer = AdminOrdersAllSerializer(orders, many=True)
         data = json.loads(json.dumps(serializer.data))
         for x in data:
-            x['customer_username'] = Account.objects.get(user_id=x['customer']).first_name + ' '+ Account.objects.get(user_id=x['customer']).last_name
+            x['customer_username'] = Account.objects.get(user_id=x['customer']).first_name + ' ' + Account.objects.get(
+                user_id=x['customer']).last_name
             x['customer_student_id'] = Account.objects.get(user_id=x['customer']).student_id
+            x['items'] = []
+            for item in x['ordered_items'].split(" + "):
+                start_index = item.split(",")[1].find(":")
+                stop_index = item.split(",")[1].find("*")
+                count = int(item.split(",")[1][start_index + 1:stop_index].strip())
+
+                r_index = item.split(",")[1].find("R")
+                price = int(item.split(",")[1][stop_index + 1:r_index].strip())
+
+                item_dict = {'name': item.split(",")[0], 'count': count, 'price': price}
+                x['items'].append(item_dict)
+            del x['ordered_items']
         return Response(data, status=status.HTTP_200_OK)
 
 
@@ -289,6 +314,25 @@ class OrdersAll(APIView):
 
         orders = Order.objects.filter(customer=customer_id)
         serializer = OrderSerializer(orders, many=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
+
+@permission_classes((IsAuthenticated,))
+class OrderFinished(APIView):
+    def post(self, arg):
+        try:
+            customer_id = self.request.user.user_id
+        except:
+            return Response(f"Authentication Error! Invalid token", status=status.HTTP_400_BAD_REQUEST)
+        try:
+            order_id = self.request.query_params.get('order_id', None)
+            order = Order.objects.get(order_id=order_id)
+        except:
+            return Response(f"Bad request: order_id not sent or not found", status=status.HTTP_400_BAD_REQUEST)
+        done = self.request.data['done']
+        order.done = done
+        order.save()
+        serializer = OrderSerializer(order)
         return Response(serializer.data, status=status.HTTP_200_OK)
 
 
