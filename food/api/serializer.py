@@ -25,10 +25,11 @@ class AdminServeSerializer(serializers.ModelSerializer):
 
 
 class UserAllServeSerializer(serializers.ModelSerializer):
+    food = FoodSerializer(read_only=True)
 
     class Meta:
         model = Serve
-        fields = ('start_serve_time', 'end_serve_time', 'remaining_count', 'max_count')
+        fields = ('serve_id', 'food', 'remaining_count', 'max_count', 'start_serve_time', 'end_serve_time')
 
 
 class UserServeSerializer(serializers.ModelSerializer):
