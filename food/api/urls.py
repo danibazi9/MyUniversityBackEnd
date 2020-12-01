@@ -4,6 +4,7 @@ from food.api import views
 urlpatterns = [
     path('', views.Foods.as_view()),
     path('all/', views.get_all_foods),
+    path('times/', views.Times.as_view()),
     path('admin/serve/', views.AdminServes.as_view()),
     path('admin/serve/all/', views.AdminServesAll.as_view()),
     path('user/serve/', views.UserServes.as_view()),

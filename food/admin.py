@@ -37,3 +37,15 @@ class OrderAdmin(admin.ModelAdmin):
 
 
 admin.site.register(Order, OrderAdmin)
+
+
+class TimeAdmin(admin.ModelAdmin):
+    list_display = ['time_id', 'start_time', 'end_time']
+    search_fields = ['time_id']
+    list_filter = ['time_id']
+
+    class Meta:
+        model = Time
+
+
+admin.site.register(Time, TimeAdmin)

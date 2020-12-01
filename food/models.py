@@ -23,6 +23,9 @@ class Serve(models.Model):
     remaining_count = models.IntegerField()
     max_count = models.IntegerField()
 
+    class Meta:
+        unique_together = ('food', 'seller', 'start_serve_time', 'end_serve_time', 'date')
+
     def __str__(self):
         return "Seller: " + self.seller.username + ", Food: " + \
                self.food.name + ", Remaining count: " + str(self.remaining_count)
@@ -39,3 +42,12 @@ class Order(models.Model):
     def __str__(self):
         return "Customer: " + self.customer.username + \
                ", Total: " + str(self.total_price) + "R, Ordered: " + self.ordered_items
+
+
+class Time(models.Model):
+    time_id = models.AutoField(primary_key=True)
+    start_time = models.TimeField()
+    end_time = models.TimeField()
+
+    def __str__(self):
+        return 'start_time: ' + str(self.start_time) + ', end_time: ' + str(self.end_time)

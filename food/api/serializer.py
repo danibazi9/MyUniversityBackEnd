@@ -3,6 +3,13 @@ from account.models import Account
 from food.models import *
 
 
+class TimeSerializer(serializers.ModelSerializer):
+
+    class Meta:
+        model = Time
+        fields = '__all__'
+
+
 class FoodSerializer(serializers.ModelSerializer):
 
     class Meta:
@@ -11,6 +18,7 @@ class FoodSerializer(serializers.ModelSerializer):
 
 
 class AdminAllServeSerializer(serializers.ModelSerializer):
+    food = FoodSerializer(read_only=True)
 
     class Meta:
         model = Serve
@@ -18,6 +26,7 @@ class AdminAllServeSerializer(serializers.ModelSerializer):
 
 
 class AdminServeSerializer(serializers.ModelSerializer):
+    food = FoodSerializer(read_only=True)
 
     class Meta:
         model = Order
