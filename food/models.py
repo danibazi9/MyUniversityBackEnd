@@ -7,7 +7,7 @@ class Food(models.Model):
     food_id = models.AutoField(primary_key=True)
     name = models.CharField(max_length=50)
     description = models.CharField(max_length=300)
-    image = models.ImageField(upload_to='images/', blank=True)
+    image = models.ImageField(upload_to='food/images/', blank=True)
     cost = models.IntegerField(default=0)
 
     def __str__(self):
