@@ -18,6 +18,7 @@ class Event(models.Model):
     name = models.CharField(max_length=255)
     image = models.ImageField(upload_to='event/images/', blank=True)
     organizer = models.ForeignKey(Organization, on_delete=models.CASCADE)
+    description = models.TextField(blank=True)
     start_time = models.DateTimeField()
     end_time = models.DateTimeField()
 
