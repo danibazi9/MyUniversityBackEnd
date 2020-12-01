@@ -43,6 +43,7 @@ INSTALLED_APPS = [
     'account',
     'BookBSE',
     'food',
+    'event',
 ]
 
 AUTH_USER_MODEL = 'account.Account'
