@@ -10,7 +10,7 @@ from rest_framework.response import Response
 from rest_framework.decorators import permission_classes, api_view
 from rest_framework.permissions import IsAuthenticated
 from .serializer import *
-from datetime import datetime
+# from datetime import datetime
 from food.models import *
 from account.models import *
 
@@ -131,7 +131,7 @@ class AdminServesAll(APIView):
                 result.append(x)
                 foodIds.append(x['food_id'])
         # print(result)
-        print(datetime.now())
+        # print(datetime.now())
         return Response(result, status=status.HTTP_200_OK)
 
 
