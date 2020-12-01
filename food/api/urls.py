@@ -6,6 +6,7 @@ urlpatterns = [
     path('all/', views.get_all_foods),
     path('times/', views.Times.as_view()),
     path('admin/serve/', views.AdminServes.as_view()),
+    path('admin/order/all/', views.AdminOrdersAll.as_view()),
     path('admin/serve/all/', views.AdminServesAll.as_view()),
     path('user/serve/', views.UserServes.as_view()),
     path('user/serve/all/', views.UserServesAll.as_view()),

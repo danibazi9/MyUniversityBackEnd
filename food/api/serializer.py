@@ -49,9 +49,17 @@ class UserServeSerializer(serializers.ModelSerializer):
         fields = ('serve_id', 'food', 'remaining_count', 'max_count')
 
 
+class AdminOrdersAllSerializer(serializers.ModelSerializer):
+    last_update = serializers.DateTimeField(format="%Y-%m-%d %H:%M:%S")
+
+    class Meta:
+        model = Order
+        fields = ('order_id', 'customer', 'total_price', 'ordered_items', 'last_update', 'done')
+
+
 class OrderSerializer(serializers.ModelSerializer):
     last_update = serializers.DateTimeField(format="%Y-%m-%d %H:%M:%S")
 
     class Meta:
         model = Order
-        fields = ('order_id', 'total_price', 'ordered_items', 'last_update', 'done')
+        fields = ('order_id', 'customer', 'total_price', 'ordered_items', 'last_update', 'done')

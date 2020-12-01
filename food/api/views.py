@@ -268,6 +268,31 @@ class UserServes(APIView):
 
 
 @permission_classes((IsAuthenticated,))
+class AdminOrdersAll(APIView):
+    def get(self, arg):
+        orders = Order.objects.filter(last_update__date=timezone.now(), done=False)
+        serializer = AdminOrdersAllSerializer(orders, many=True)
+        data = json.loads(json.dumps(serializer.data))
+        for x in data:
+            x['customer_username'] = Account.objects.get(user_id=x['customer']).username
+            x['customer_student_id'] = Account.objects.get(user_id=x['customer']).student_id
+        for x in data:
+            x['items'] = []
+            for item in x['ordered_items'].split(" + "):
+                start_index = item.split(",")[1].find(":")
+                stop_index = item.split(",")[1].find("*")
+                count = int(item.split(",")[1][start_index + 1:stop_index].strip())
+
+                r_index = item.split(",")[1].find("R")
+                price = int(item.split(",")[1][stop_index + 1:r_index].strip())
+
+                item_dict = {'name': item.split(",")[0], 'count': count, 'price': price}
+                x['items'].append(item_dict)
+            del x['ordered_items']
+        return Response(data, status=status.HTTP_200_OK)
+
+
+@permission_classes((IsAuthenticated,))
 class OrdersAll(APIView):
     def get(self, arg):
         try:
