@@ -37,7 +37,7 @@ class Stock(models.Model):
     book = models.ForeignKey(Book, on_delete=models.CASCADE)
     edition = models.IntegerField()
     printno = models.IntegerField()
-    image = models.ImageField(upload_to='images/', blank=True)
+    image = models.ImageField(upload_to='stock/images/', blank=True)
     price = models.IntegerField()
     description = models.CharField(max_length=1024, null=True)
 
