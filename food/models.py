@@ -1,5 +1,6 @@
 from django.db import models
 from account.models import *
+from django.utils import timezone
 
 
 class Food(models.Model):
@@ -19,7 +20,7 @@ class Serve(models.Model):
     seller = models.ForeignKey(Account, on_delete=models.CASCADE)
     start_serve_time = models.TimeField()
     end_serve_time = models.TimeField()
-    date = models.DateField(auto_now_add=True)
+    date = models.DateField(default=timezone.now)
     remaining_count = models.IntegerField()
     max_count = models.IntegerField()
 

@@ -2,7 +2,7 @@ import datetime
 import json
 from django.core.files.base import ContentFile
 import base64
-
+import django.utils.timezone
 
 from rest_framework import status
 from rest_framework.views import APIView
@@ -111,7 +111,8 @@ class AdminServesAll(APIView):
         except:
             return Response("Authentication Error! Invalid token", status=status.HTTP_400_BAD_REQUEST)
         try:
-            serves = Serve.objects.filter(seller=seller_id)
+            print(django.utils.timezone.now())
+            serves = Serve.objects.filter(seller=seller_id, date=timezone.now())
         except:
             return Response("BAD REQUEST", status=status.HTTP_400_BAD_REQUEST)
         serializer = AdminAllServeSerializer(serves, many=True)
@@ -120,8 +121,18 @@ class AdminServesAll(APIView):
             for key in x['food'].keys():
                 x[key] = x['food'][key]
             del x['food']
-        return Response(data, status=status.HTTP_200_OK)
-        # return Response(serializer.data, status=status.HTTP_200_OK)
+        # print(data)
+        result = []
+        foodIds = []
+        for x in data:
+            if x['food_id'] in foodIds:
+                pass
+            else:
+                result.append(x)
+                foodIds.append(x['food_id'])
+        # print(result)
+        print(datetime.now())
+        return Response(result, status=status.HTTP_200_OK)
 
 
 @permission_classes((IsAuthenticated,))
@@ -182,8 +193,10 @@ class AdminServes(APIView):
             for each in times_list:
                 start_time = each['start_time']
                 end_time = each['end_time']
+                date = each['date']
                 count = each['count']
                 serve = Serve()
+                serve.date = datetime.strptime(date, '%Y-%m-%d')
                 serve.food = Food.objects.get(food_id=food_id)
                 serve.start_serve_time = datetime.strptime(start_time, '%H:%M:%S')
                 serve.end_serve_time = datetime.strptime(end_time, '%H:%M:%S')
@@ -193,7 +206,8 @@ class AdminServes(APIView):
                 serve.save()
             return Response('success', status=status.HTTP_201_CREATED)
 
-        except:
+        except Exception as e:
+            print('error is: ', e)
             return Response("BAD REQUEST", status=status.HTTP_400_BAD_REQUEST)
 
     # try:
