@@ -1,5 +1,6 @@
 from django.db import models
 from account.models import *
+from django.utils import timezone
 
 
 class Food(models.Model):
@@ -19,9 +20,12 @@ class Serve(models.Model):
     seller = models.ForeignKey(Account, on_delete=models.CASCADE)
     start_serve_time = models.TimeField()
     end_serve_time = models.TimeField()
-    date = models.DateField(auto_now_add=True)
+    date = models.DateField(default=timezone.now)
     remaining_count = models.IntegerField()
     max_count = models.IntegerField()
+
+    class Meta:
+        unique_together = ('food', 'seller', 'start_serve_time', 'end_serve_time', 'date')
 
     def __str__(self):
         return "Seller: " + self.seller.username + ", Food: " + \
@@ -39,3 +43,12 @@ class Order(models.Model):
     def __str__(self):
         return "Customer: " + self.customer.username + \
                ", Total: " + str(self.total_price) + "R, Ordered: " + self.ordered_items
+
+
+class Time(models.Model):
+    time_id = models.AutoField(primary_key=True)
+    start_time = models.TimeField()
+    end_time = models.TimeField()
+
+    def __str__(self):
+        return 'start_time: ' + str(self.start_time) + ', end_time: ' + str(self.end_time)

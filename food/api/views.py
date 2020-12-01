@@ -1,5 +1,8 @@
 import datetime
 import json
+from django.core.files.base import ContentFile
+import base64
+import django.utils.timezone
 
 from rest_framework import status
 from rest_framework.views import APIView
@@ -7,6 +10,24 @@ from rest_framework.response import Response
 from rest_framework.decorators import permission_classes, api_view
 from rest_framework.permissions import IsAuthenticated
 from .serializer import *
+from datetime import datetime
+from food.models import *
+from account.models import *
+
+
+class Times(APIView):
+    def post(self, arg):
+        serializer = TimeSerializer(data=self.request.data)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+        else:
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+    def get(self, arg):
+        times = Time.objects.all()
+        serializer = TimeSerializer(times, many=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)
 
 
 # this view is to get all available foods (foods menu)
@@ -21,22 +42,35 @@ def get_all_foods(request):
 @permission_classes((IsAuthenticated,))
 class Foods(APIView):
     def post(self, arg):
-        serializer = FoodSerializer(data=self.request.data)
-        if serializer.is_valid():
-            serializer.save()
-            return Response(serializer.data, status=status.HTTP_201_CREATED)
-        else:
-            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        try:
+            data = self.request.data
+            print(data['price'])
+            new_data = {}
+            filename = data['filename']
+            file = ContentFile(base64.b64decode(data['image']), name=filename)
+            food = Food()
+            food.name = data['name']
+            food.cost = data['price']
+            food.image = file
+            food.description = data['description']
+            food.save()
+            new_data['food_id'] = food.food_id
+            return Response(new_data, status=status.HTTP_201_CREATED)
+        except:
+            return Response('error', status=status.HTTP_400_BAD_REQUEST)
 
     def get(self, arg):
         food_id = self.request.query_params.get('food_id', None)
         if food_id is not None:
             try:
                 food = Food.objects.get(food_id=food_id)
+                serves = Serve.objects.filter(food=food)
+                print(serves)
+                serve_serializer = AdminAllServeSerializer(serves, many=True)
             except Food.DoesNotExist:
                 return Response(f"food_id={food_id}, NOT FOUND", status=status.HTTP_404_NOT_FOUND)
             serializer = FoodSerializer(food)
-            return Response(serializer.data, status=status.HTTP_200_OK)
+            return Response(serve_serializer.data, status=status.HTTP_200_OK)
         else:
             return Response("food_id: None, BAD REQUEST ", status=status.HTTP_400_BAD_REQUEST)
 
@@ -77,11 +111,28 @@ class AdminServesAll(APIView):
         except:
             return Response("Authentication Error! Invalid token", status=status.HTTP_400_BAD_REQUEST)
         try:
-            serves = Serve.objects.filter(seller=seller_id)
+            print(django.utils.timezone.now())
+            serves = Serve.objects.filter(seller=seller_id, date=timezone.now())
         except:
             return Response("BAD REQUEST", status=status.HTTP_400_BAD_REQUEST)
         serializer = AdminAllServeSerializer(serves, many=True)
-        return Response(serializer.data, status=status.HTTP_200_OK)
+        data = json.loads(json.dumps(serializer.data))
+        for x in data:
+            for key in x['food'].keys():
+                x[key] = x['food'][key]
+            del x['food']
+        # print(data)
+        result = []
+        foodIds = []
+        for x in data:
+            if x['food_id'] in foodIds:
+                pass
+            else:
+                result.append(x)
+                foodIds.append(x['food_id'])
+        # print(result)
+        print(datetime.now())
+        return Response(result, status=status.HTTP_200_OK)
 
 
 @permission_classes((IsAuthenticated,))
@@ -127,20 +178,48 @@ class AdminServes(APIView):
         return Response(f"seller_id: {seller_id}, DELETED", status=status.HTTP_200_OK)
 
     def post(self, arg):
+
         try:
             seller_id = self.request.user.user_id
         except:
             return Response("Authentication Error! Invalid token", status=status.HTTP_400_BAD_REQUEST)
+
+        # print(self.request.data)
+        # return Response('ok')
         try:
-            serve = Serve.objects.get(seller=seller_id)
-        except Serve.DoesNotExist:
+            map = self.request.data
+            food_id = map['food_id']
+            times_list = map['list']
+            for each in times_list:
+                start_time = each['start_time']
+                end_time = each['end_time']
+                date = each['date']
+                count = each['count']
+                serve = Serve()
+                serve.date = datetime.strptime(date, '%Y-%m-%d')
+                serve.food = Food.objects.get(food_id=food_id)
+                serve.start_serve_time = datetime.strptime(start_time, '%H:%M:%S')
+                serve.end_serve_time = datetime.strptime(end_time, '%H:%M:%S')
+                serve.seller = Account.objects.get(user_id=seller_id)
+                serve.max_count = count
+                serve.remaining_count = count
+                serve.save()
+            return Response('success', status=status.HTTP_201_CREATED)
+
+        except Exception as e:
+            print('error is: ', e)
             return Response("BAD REQUEST", status=status.HTTP_400_BAD_REQUEST)
-        serializer = AdminServeSerializer(serve, data=self.request.data)
-        if serializer.is_valid():
-            serializer.save()
-            return Response(serializer.data, status=status.HTTP_201_CREATED)
-        else:
-            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+    # try:
+        #     serve = Serve.objects.get(seller=seller_id)
+        # except Serve.DoesNotExist:
+        #     return Response("BAD REQUEST", status=status.HTTP_400_BAD_REQUEST)
+        # serializer = AdminServeSerializer(serve, data=self.request.data)
+        # if serializer.is_valid():
+        #     serializer.save()
+        #     return Response(serializer.data, status=status.HTTP_201_CREATED)
+        # else:
+        #     return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
 @permission_classes((IsAuthenticated,))
