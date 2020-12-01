@@ -15,9 +15,9 @@ admin.site.register(Organization, OrganizationAdmin)
 
 
 class EventAdmin(admin.ModelAdmin):
-    list_display = ['event_id', 'name', 'organizer', 'start_time', 'end_time', 'hold_type']
+    list_display = ['event_id', 'name', 'organizer', 'start_time', 'end_time', 'verified']
     search_fields = ['name', 'organizer', 'description']
-    list_filter = ['organizer', 'hold_type']
+    list_filter = ['organizer', 'hold_type', 'verified']
 
     class Meta:
         model = Event

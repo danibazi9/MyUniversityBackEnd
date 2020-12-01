@@ -30,6 +30,7 @@ class Event(models.Model):
     location = models.CharField(max_length=255)
     cost = models.IntegerField(default=0)
     capacity = models.IntegerField(default=0)
+    verified = models.BooleanField(default=False)
 
     def __str__(self):
         return self.name + "    Organized by: " + self.organizer.name
