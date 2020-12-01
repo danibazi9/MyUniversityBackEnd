@@ -153,7 +153,12 @@ class UserServesAll(APIView):
 
         serves = Serve.objects.filter(date=datetime.datetime.now())
         serializer = UserAllServeSerializer(serves, many=True)
-        return Response(serializer.data, status=status.HTTP_200_OK)
+        data = json.loads(json.dumps(serializer.data))
+        for x in data:
+            for key in x['food'].keys():
+                x[key] = x['food'][key]
+            del x['food']
+        return Response(data, status=status.HTTP_200_OK)
 
 
 @permission_classes((IsAuthenticated,))
@@ -172,16 +177,13 @@ class UserServes(APIView):
                                           start_serve_time__gte=start_serve_time,
                                           end_serve_time__lte=end_serve_time)
 
-            serializer = UserServeSerializer(serves, data=self.request.data, many=True)
-            if serializer.is_valid():
-                data = json.loads(json.dumps(serializer.data))
-                for x in data:
-                    for key in x['food'].keys():
-                        x[key] = x['food'][key]
-                    del x['food']
-                return Response(data, status=status.HTTP_200_OK)
-            else:
-                return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+            serializer = UserServeSerializer(serves, many=True)
+            data = json.loads(json.dumps(serializer.data))
+            for x in data:
+                for key in x['food'].keys():
+                    x[key] = x['food'][key]
+                del x['food']
+            return Response(data, status=status.HTTP_200_OK)
         else:
             return Response("Start_time / End_time: None, BAD REQUEST", status=status.HTTP_400_BAD_REQUEST)
 
