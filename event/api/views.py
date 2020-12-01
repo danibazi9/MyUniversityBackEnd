@@ -80,3 +80,13 @@ class RemoveEvent(APIView):
 
         event_to_delete.delete()
         return Response(f"event_id: {event_id}, DELETED", status=status.HTTP_200_OK)
+
+
+@permission_classes((IsAuthenticated,))
+class EventHistory(APIView):
+    def get(self, args):
+        events = Event.objects.filter(organizer__head_of_organization=self.request.user)
+        serializer = EventSerializer(events, many=True)
+        data = json.loads(json.dumps(serializer.data))
+
+        return Response(data, status=status.HTTP_200_OK)
