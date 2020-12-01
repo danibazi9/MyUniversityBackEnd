@@ -274,7 +274,7 @@ class AdminOrdersAll(APIView):
         serializer = AdminOrdersAllSerializer(orders, many=True)
         data = json.loads(json.dumps(serializer.data))
         for x in data:
-            x['customer_username'] = Account.objects.get(user_id=x['customer']).username
+            x['customer_username'] = Account.objects.get(user_id=x['customer']).first_name + ' '+ Account.objects.get(user_id=x['customer']).last_name
             x['customer_student_id'] = Account.objects.get(user_id=x['customer']).student_id
         return Response(data, status=status.HTTP_200_OK)
 
