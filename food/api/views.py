@@ -272,6 +272,39 @@ class UserServes(APIView):
 
 
 @permission_classes((IsAuthenticated,))
+class AdminOrdersHistoryAll(APIView):
+    def get(self, arg):
+        try:
+            date = self.request.query_params.get('date', None)
+        except:
+            return Response(f"No search was sent in params", status=status.HTTP_400_BAD_REQUEST)
+        if date is None or len(str(date)) == 0:
+            print('search: ', date)
+            orders = Order.objects.filter(last_update__date=timezone.now(), done=True)
+        else:
+            orders = Order.objects.filter(Q(last_update__date=datetime.datetime.strptime(date, '%Y-%m-%d'), done=True))
+        serializer = AdminOrdersAllSerializer(orders, many=True)
+        data = json.loads(json.dumps(serializer.data))
+        for x in data:
+            x['customer_username'] = Account.objects.get(user_id=x['customer']).first_name + ' ' + Account.objects.get(
+                user_id=x['customer']).last_name
+            x['customer_student_id'] = Account.objects.get(user_id=x['customer']).student_id
+            x['items'] = []
+            for item in x['ordered_items'].split(" + "):
+                start_index = item.split(",")[1].find(":")
+                stop_index = item.split(",")[1].find("*")
+                count = int(item.split(",")[1][start_index + 1:stop_index].strip())
+
+                r_index = item.split(",")[1].find("R")
+                price = int(item.split(",")[1][stop_index + 1:r_index].strip())
+
+                item_dict = {'name': item.split(",")[0], 'count': count, 'price': price}
+                x['items'].append(item_dict)
+            del x['ordered_items']
+        return Response(data, status=status.HTTP_200_OK)
+
+
+@permission_classes((IsAuthenticated,))
 class AdminOrdersAll(APIView):
     def get(self, arg):
         try:
