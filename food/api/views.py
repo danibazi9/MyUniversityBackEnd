@@ -60,11 +60,13 @@ class Foods(APIView):
             return Response('error', status=status.HTTP_400_BAD_REQUEST)
 
     def get(self, arg):
+        print('here3')
         food_id = self.request.query_params.get('food_id', None)
+        date = self.request.query_params.get('date', None)
         if food_id is not None:
             try:
                 food = Food.objects.get(food_id=food_id)
-                serves = Serve.objects.filter(food=food)
+                serves = Serve.objects.filter(food=food, date=datetime.datetime.strptime(date, '%Y-%m-%d'))
                 print(serves)
                 serve_serializer = AdminAllServeSerializer(serves, many=True)
             except Food.DoesNotExist:
