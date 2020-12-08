@@ -14,6 +14,30 @@ class OrganizationAdmin(admin.ModelAdmin):
 admin.site.register(Organization, OrganizationAdmin)
 
 
+class EventAuthorizedOrganizerAdmin(admin.ModelAdmin):
+    list_display = ['id', 'username', 'first_name', 'last_name']
+    search_fields = ['user']
+    list_filter = ['user']
+
+    def username(self, obj):
+        result = Account.objects.get(user_id=obj.user.user_id)
+        return result.username
+
+    def first_name(self, obj):
+        result = Account.objects.get(user_id=obj.user.user_id)
+        return result.first_name
+
+    def last_name(self, obj):
+        result = Account.objects.get(user_id=obj.user.user_id)
+        return result.last_name
+
+    class Meta:
+        model = EventAuthorizedOrganizer
+
+
+admin.site.register(EventAuthorizedOrganizer, EventAuthorizedOrganizerAdmin)
+
+
 class EventAdmin(admin.ModelAdmin):
     list_display = ['event_id', 'name', 'organizer', 'start_time', 'end_time', 'verified']
     search_fields = ['name', 'organizer', 'description']
