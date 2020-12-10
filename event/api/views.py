@@ -7,8 +7,6 @@ from rest_framework.decorators import permission_classes, api_view
 from rest_framework.permissions import IsAuthenticated
 from .serializer import *
 
-
-# this view is to get all available foods (foods menu)
 from ..models import *
 
 
@@ -20,7 +18,7 @@ def get_all_events(request):
 
 
 @permission_classes((IsAuthenticated,))
-class EventProperties(APIView):
+class UserEvent(APIView):
     def get(self, args):
         event_id = self.request.query_params.get('event_id', None)
         if event_id is not None:
@@ -34,9 +32,6 @@ class EventProperties(APIView):
         else:
             return Response("Event_id: None, BAD REQUEST", status=status.HTTP_400_BAD_REQUEST)
 
-
-@permission_classes((IsAuthenticated,))
-class AddEvent(APIView):
     def post(self, args):
         serializer = EventSerializer(data=self.request.data)
         if serializer.is_valid():
@@ -45,9 +40,6 @@ class AddEvent(APIView):
         else:
             return Response(f"{serializer.errors}, BAD REQUEST", status=status.HTTP_400_BAD_REQUEST)
 
-
-@permission_classes((IsAuthenticated,))
-class EditEvent(APIView):
     def put(self, arg):
         event_id = self.request.query_params.get('event_id', None)
         if event_id is not None:
@@ -65,9 +57,6 @@ class EditEvent(APIView):
         else:
             return Response("event_id: None, BAD REQUEST ", status=status.HTTP_400_BAD_REQUEST)
 
-
-@permission_classes((IsAuthenticated,))
-class RemoveEvent(APIView):
     def delete(self, arg):
         event_id = self.request.query_params.get('event_id', None)
         if event_id is not None:
