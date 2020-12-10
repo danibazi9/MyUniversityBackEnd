@@ -46,6 +46,56 @@ class UserEvent(APIView):
             return Response("Event_id: None, BAD REQUEST", status=status.HTTP_400_BAD_REQUEST)
 
     def post(self, args):
+        try:
+            authorized_organizer = EventAuthorizedOrganizer.objects.get(user=self.request.user)
+        except EventAuthorizedOrganizer.DoesNotExist:
+            return Response("ERROR: You haven't access to add event!", status=status.HTTP_401_UNAUTHORIZED)
+
+        try:
+            organizer = Organization.objects.get(head_of_organization=self.request.user)
+        except Organization.DoesNotExist:
+            return Response("ERROR: There isn't any organization that you are the head of it!",
+                            status=status.HTTP_404_NOT_FOUND)
+
+        serializer = EventSerializer(data=self.request.data)
+        if serializer.is_valid():
+            data = self.request.data
+
+            file = ""
+            if 'filename' in data and 'image' in data:
+                filename = data['filename']
+                file = ContentFile(base64.b64decode(data['image']), name=filename)
+
+            description = ""
+            if 'description' in data:
+                description = data['description']
+
+            capacity = 100
+            if 'capacity' in data:
+                capacity = data['capacity']
+
+            cost = 0
+            if 'cost' in data:
+                cost = data['cost']
+
+            event = Event(name=data['name'],
+                          image=file,
+                          organizer=organizer,
+                          description=description,
+                          start_time=datetime.datetime.strptime(data['start_time'], '%Y-%m-%d %H:%M:%S'),
+                          end_time=datetime.datetime.strptime(data['end_time'], '%Y-%m-%d %H:%M:%S'),
+                          hold_type=data['hold_type'],
+                          location=data['location'],
+                          cost=cost,
+                          capacity=capacity,
+                          remaining_capacity=capacity,
+                          )
+
+            event.save()
+            new_data = {'event_id': event.event_id, 'message': "Event has added successfully!"}
+            return Response(new_data, status=status.HTTP_201_CREATED)
+        else:
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
     def put(self, arg):
         event_id = self.request.query_params.get('event_id', None)
