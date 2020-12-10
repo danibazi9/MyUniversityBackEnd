@@ -1,5 +1,16 @@
 from django.db import models
+
+from BookBSE.models import Faculty
 from account.models import Account
+
+
+class CultureDeputy(models.Model):
+    id = models.AutoField(primary_key=True)
+    user = models.ForeignKey(Account, on_delete=models.CASCADE)
+    faculty = models.ForeignKey(Faculty, on_delete=models.CASCADE)
+
+    def __str__(self):
+        return self.user.first_name + " " + self.user.last_name + ", Deputy of: " + self.faculty.name
 
 
 class Organization(models.Model):
@@ -8,6 +19,7 @@ class Organization(models.Model):
     established_year = models.IntegerField(blank=True)
     head_of_organization = models.ForeignKey(Account, on_delete=models.CASCADE)
     description = models.CharField(max_length=500, blank=True)
+    culture_deputy = models.ForeignKey(CultureDeputy, on_delete=models.CASCADE)
 
     def __str__(self):
         return self.name + ",    Head: " + self.head_of_organization.first_name + " " + self.head_of_organization.last_name
