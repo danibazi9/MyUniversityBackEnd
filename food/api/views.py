@@ -196,10 +196,10 @@ class AdminServes(APIView):
                 date = each['date']
                 count = each['count']
                 serve = Serve()
-                serve.date = datetime.strptime(date, '%Y-%m-%d')
+                serve.date = datetime.datetime.strptime(date, '%Y-%m-%d')
                 serve.food = Food.objects.get(food_id=food_id)
-                serve.start_serve_time = datetime.strptime(start_time, '%H:%M:%S')
-                serve.end_serve_time = datetime.strptime(end_time, '%H:%M:%S')
+                serve.start_serve_time = datetime.datetime.strptime(start_time, '%H:%M:%S')
+                serve.end_serve_time = datetime.datetime.strptime(end_time, '%H:%M:%S')
                 serve.seller = Account.objects.get(user_id=seller_id)
                 serve.max_count = count
                 serve.remaining_count = count
