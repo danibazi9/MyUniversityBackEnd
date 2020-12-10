@@ -29,6 +29,21 @@ def get_all_events(request):
 @permission_classes((IsAuthenticated,))
 class UserEvent(APIView):
     def get(self, args):
+        event_id = self.request.query_params.get('event_id', None)
+        if event_id is not None:
+            try:
+                event = Event.objects.get(event_id=event_id)
+            except Event.DoesNotExist:
+                return Response(f"Event with event_id {event_id} NOT FOUND!", status=status.HTTP_404_NOT_FOUND)
+
+            serializer = EventSerializer(event)
+            data = json.loads(json.dumps(serializer.data))
+            data['organizer'] = data['organizer'].split(",    Head")[0]
+            del data['verified']
+
+            return Response(data, status=status.HTTP_200_OK)
+        else:
+            return Response("Event_id: None, BAD REQUEST", status=status.HTTP_400_BAD_REQUEST)
 
     def post(self, args):
 
