@@ -10,3 +10,18 @@ class EventSerializer(serializers.ModelSerializer):
     class Meta:
         model = Event
         fields = '__all__'
+
+
+class UserSerializer(serializers.ModelSerializer):
+
+    class Meta:
+        model = Account
+        fields = ('username', 'first_name', 'last_name')
+
+
+class EventAuthorizedOrganizerSerializer(serializers.ModelSerializer):
+
+    class Meta:
+        model = EventAuthorizedOrganizer
+        fields = ('user',)
+
