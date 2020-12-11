@@ -61,6 +61,29 @@ class UserEvent(APIView):
         if serializer.is_valid():
             data = self.request.data
 
+            start_time = datetime.datetime.strptime(data['start_time'], '%Y-%m-%d %H:%M:%S')
+            start_time_datetime = datetime.datetime(year=start_time.year, month=start_time.month,
+                                                    day=start_time.day, hour=start_time.hour,
+                                                    minute=start_time.minute, second=start_time.second)
+
+            end_time = datetime.datetime.strptime(data['end_time'], '%Y-%m-%d %H:%M:%S')
+            end_time_datetime = datetime.datetime(year=end_time.year, month=end_time.month,
+                                                  day=end_time.day, hour=end_time.hour,
+                                                  minute=end_time.minute, second=end_time.second)
+
+            if start_time_datetime.timestamp() < datetime.datetime.now().timestamp():
+                return Response(f"ERROR: the start_time of event is for the past!", status=status.HTTP_400_BAD_REQUEST)
+
+            if end_time_datetime.timestamp() < datetime.datetime.now().timestamp():
+                return Response(f"ERROR: the end_time of event is for the past!", status=status.HTTP_400_BAD_REQUEST)
+
+            if start_time_datetime.timestamp() > end_time_datetime.timestamp():
+                return Response(f"ERROR: start_time is larger than end_time!", status=status.HTTP_400_BAD_REQUEST)
+
+            if end_time_datetime.timestamp() - start_time_datetime.timestamp() < 1800:
+                return Response(f"ERROR: The whole time of any event can't be less than 30 minutes!",
+                                status=status.HTTP_400_BAD_REQUEST)
+
             file = ""
             if 'filename' in data and 'image' in data:
                 filename = data['filename']
@@ -82,8 +105,8 @@ class UserEvent(APIView):
                           image=file,
                           organizer=organizer,
                           description=description,
-                          start_time=datetime.datetime.strptime(data['start_time'], '%Y-%m-%d %H:%M:%S'),
-                          end_time=datetime.datetime.strptime(data['end_time'], '%Y-%m-%d %H:%M:%S'),
+                          start_time=start_time,
+                          end_time=end_time,
                           hold_type=data['hold_type'],
                           location=data['location'],
                           cost=cost,
@@ -98,21 +121,6 @@ class UserEvent(APIView):
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
     def put(self, arg):
-        event_id = self.request.query_params.get('event_id', None)
-        if event_id is not None:
-            try:
-                event = Event.objects.get(event_id=event_id)
-            except Event.DoesNotExist:
-                return Response(f"event_id={event_id}, NOT FOUND", status=status.HTTP_404_NOT_FOUND)
-
-            serializer = EventSerializer(event, data=self.request.data)
-            if serializer.is_valid():
-                serializer.save()
-                return Response(serializer.data, status=status.HTTP_201_CREATED)
-            else:
-                return Response(f"{serializer.errors}, BAD REQUEST", status=status.HTTP_400_BAD_REQUEST)
-        else:
-            return Response("event_id: None, BAD REQUEST ", status=status.HTTP_400_BAD_REQUEST)
 
     def delete(self, arg):
         event_id = self.request.query_params.get('event_id', None)
