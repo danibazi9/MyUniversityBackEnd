@@ -7,7 +7,7 @@ urlpatterns = [
     path('admin/requests/all/', views.AdminAllRequests.as_view()),
     path('admin/requests/', views.AdminAcceptRequest.as_view()),
     path('admin/requests/history/', views.AdminRequestsHistory.as_view()),
-    path('user/events/all/', views.get_all_events),
-    path('user/event/', views.UserEvent.as_view()),
-    path('user/event/history/', views.UserEventsHistory.as_view()),
+    path('user/all/', views.get_all_events),
+    path('user/', views.UserEvent.as_view()),
+    path('user/history/', views.UserEventsHistory.as_view()),
 ]
