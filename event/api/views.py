@@ -334,3 +334,49 @@ class AdminAuthAll(APIView):
                                                        ))
             serializer = UserSerializer(users_to_show, many=True)
             return Response(serializer.data, status=status.HTTP_200_OK)
+
+@permission_classes((IsAuthenticated,))
+class AdminAuth(APIView):
+    def get(self, args):
+        try:
+            culture_deputy = CultureDeputy.objects.get(user=self.request.user)
+        except CultureDeputy.DoesNotExist:
+            return Response("ERROR: You haven't been added as culture deputy of any faculty!",
+                            status=status.HTTP_401_UNAUTHORIZED)
+
+        if len(culture_deputy.organization_set.all()) == 0:
+            return Response("Nothing! You haven't been added as culture deputy of any organization!",
+                            status=status.HTTP_404_NOT_FOUND)
+
+        user_id = self.request.query_params.get('user_id', None)
+
+        if user_id is not None:
+            try:
+                my_user = Account.objects.get(user_id=user_id)
+            except EventAuthorizedOrganizer.DoesNotExist:
+                return Response(f"User with user_id {user_id} NOT FOUND!", status=status.HTTP_404_NOT_FOUND)
+
+            try:
+                user_to_show = EventAuthorizedOrganizer.objects.get(user=my_user)
+                serializer = EventAuthorizedOrganizerSerializer(user_to_show)
+
+                data = json.loads(json.dumps(serializer.data))
+                user = Account.objects.get(user_id=data['user'])
+                data['username'] = user.username
+                data['first_name'] = user.first_name
+                data['last_name'] = user.last_name
+                data['grant'] = 'true'
+                del data['user']
+
+                return Response(data, status=status.HTTP_200_OK)
+            except EventAuthorizedOrganizer.DoesNotExist:
+                user_to_show = Account.objects.get(user_id=user_id)
+                data = {'username': user_to_show.username,
+                        'first_name': user_to_show.first_name,
+                        'last_name': user_to_show.last_name,
+                        'grant': 'false'
+                        }
+
+                return Response(data, status=status.HTTP_200_OK)
+        else:
+            return Response("user_id: None, BAD REQUEST!", status=status.HTTP_400_BAD_REQUEST)
