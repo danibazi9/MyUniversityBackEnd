@@ -282,3 +282,38 @@ class UserEventsHistory(APIView):
             del x['organizer']
 
         return Response(data, status=status.HTTP_200_OK)
+
+
+@permission_classes((IsAuthenticated,))
+class AdminAuthAll(APIView):
+    def get(self, args):
+        try:
+            culture_deputy = CultureDeputy.objects.get(user=self.request.user)
+        except CultureDeputy.DoesNotExist:
+            return Response("ERROR: You haven't been added as culture deputy of any faculty!",
+                            status=status.HTTP_401_UNAUTHORIZED)
+
+        if len(culture_deputy.organization_set.all()) == 0:
+            return Response("Nothing! You haven't been added as culture deputy of any organization!",
+                            status=status.HTTP_404_NOT_FOUND)
+
+        state = self.request.query_params.get('state', None)
+        if state is not None:
+            if state == 'true':
+                users_to_show = EventAuthorizedOrganizer.objects.filter(culture_deputy=culture_deputy)
+                serializer = EventAuthorizedOrganizerSerializer(users_to_show, many=True)
+
+                data = json.loads(json.dumps(serializer.data))
+                for x in data:
+                    user = Account.objects.get(user_id=x['user'])
+                    x['username'] = user.username
+                    x['first_name'] = user.first_name
+                    x['last_name'] = user.last_name
+                    del x['user']
+                return Response(data, status=status.HTTP_200_OK)
+            else:
+                return Response("Status: BAD REQUEST!", status=status.HTTP_400_BAD_REQUEST)
+        else:
+            users_to_show = Account.objects.all().exclude(user_id=culture_deputy.user_id)
+            serializer = UserSerializer(users_to_show, many=True)
+            return Response(serializer.data, status=status.HTTP_200_OK)
