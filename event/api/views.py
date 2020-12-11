@@ -261,10 +261,24 @@ class UserEvent(APIView):
 
 
 @permission_classes((IsAuthenticated,))
-class EventHistory(APIView):
+class UserEventsHistory(APIView):
     def get(self, args):
+        try:
+            authorized_organizer = EventAuthorizedOrganizer.objects.get(user=self.request.user)
+        except EventAuthorizedOrganizer.DoesNotExist:
+            return Response("ERROR: You haven't access to show history of events!", status=status.HTTP_401_UNAUTHORIZED)
+
+        try:
+            organizer = Organization.objects.get(head_of_organization=self.request.user)
+        except Organization.DoesNotExist:
+            return Response("ERROR: There isn't any organization that you are the head of it!",
+                            status=status.HTTP_404_NOT_FOUND)
+
         events = Event.objects.filter(organizer__head_of_organization=self.request.user)
         serializer = EventSerializer(events, many=True)
+
         data = json.loads(json.dumps(serializer.data))
+        for x in data:
+            del x['organizer']
 
         return Response(data, status=status.HTTP_200_OK)
