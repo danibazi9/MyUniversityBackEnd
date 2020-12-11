@@ -28,6 +28,7 @@ class Organization(models.Model):
 class EventAuthorizedOrganizer(models.Model):
     id = models.AutoField(primary_key=True)
     user = models.ForeignKey(Account, on_delete=models.CASCADE)
+    culture_deputy = models.ForeignKey(CultureDeputy, on_delete=models.CASCADE)
 
     def __str__(self):
         return self.user.username
