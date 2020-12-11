@@ -217,10 +217,40 @@ class UserEvent(APIView):
             return Response("event_id: None, BAD REQUEST ", status=status.HTTP_400_BAD_REQUEST)
 
     def delete(self, arg):
+        try:
+            authorized_organizer = EventAuthorizedOrganizer.objects.get(user=self.request.user)
+        except EventAuthorizedOrganizer.DoesNotExist:
+            return Response("ERROR: You haven't access to delete event!", status=status.HTTP_401_UNAUTHORIZED)
+
+        try:
+            organizer = Organization.objects.get(head_of_organization=self.request.user)
+        except Organization.DoesNotExist:
+            return Response("ERROR: There isn't any organization that you are the head of it!",
+                            status=status.HTTP_404_NOT_FOUND)
+
         event_id = self.request.query_params.get('event_id', None)
         if event_id is not None:
             try:
                 event_to_delete = Event.objects.get(event_id=event_id)
+
+                start_time = event_to_delete.start_time
+                end_time = event_to_delete.end_time
+
+                event_start_time_datetime = datetime.datetime(year=start_time.year, month=start_time.month,
+                                                              day=start_time.day, hour=start_time.hour,
+                                                              minute=start_time.minute, second=start_time.second)
+
+                event_end_time_datetime = datetime.datetime(year=end_time.year, month=end_time.month,
+                                                            day=end_time.day, hour=end_time.hour,
+                                                            minute=end_time.minute, second=end_time.second)
+
+                if event_start_time_datetime.timestamp() < datetime.datetime.now().timestamp():
+                    return Response(f"ERROR: the start_time of event is for the past!",
+                                    status=status.HTTP_400_BAD_REQUEST)
+
+                if event_end_time_datetime.timestamp() < datetime.datetime.now().timestamp():
+                    return Response(f"ERROR: the end_time of event is for the past!",
+                                    status=status.HTTP_400_BAD_REQUEST)
             except Event.DoesNotExist:
                 return Response(f"event_id={event_id}, NOT FOUND", status=status.HTTP_404_NOT_FOUND)
         else:
