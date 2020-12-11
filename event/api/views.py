@@ -380,3 +380,48 @@ class AdminAuth(APIView):
                 return Response(data, status=status.HTTP_200_OK)
         else:
             return Response("user_id: None, BAD REQUEST!", status=status.HTTP_400_BAD_REQUEST)
+
+    def post(self, args):
+        try:
+            culture_deputy = CultureDeputy.objects.get(user=self.request.user)
+        except CultureDeputy.DoesNotExist:
+            return Response("ERROR: You haven't been added as culture deputy of any faculty!",
+                            status=status.HTTP_401_UNAUTHORIZED)
+
+        if len(culture_deputy.organization_set.all()) == 0:
+            return Response("Nothing! You haven't been added as culture deputy of any organization!",
+                            status=status.HTTP_404_NOT_FOUND)
+
+        request_body = self.request.POST.dict()
+
+        if 'user_id' not in request_body:
+            return Response("user_id: None, BAD REQUEST!", status=status.HTTP_400_BAD_REQUEST)
+        if 'grant' not in request_body:
+            return Response("grant: None, BAD REQUEST!", status=status.HTTP_400_BAD_REQUEST)
+
+        user_id = request_body['user_id']
+        grant = request_body['grant']
+
+        try:
+            my_user = Account.objects.get(user_id=user_id)
+        except Account.DoesNotExist:
+            return Response(f"User with user_id {user_id} NOT FOUND!", status=status.HTTP_404_NOT_FOUND)
+
+        if grant == 'true':
+            user_to_search = EventAuthorizedOrganizer.objects.filter(user=my_user, culture_deputy=culture_deputy)
+            if len(user_to_search) != 0:
+                return Response(f"Redundant! User with user_id {my_user.user_id} has access to add events!",
+                                status=status.HTTP_302_FOUND)
+            else:
+                EventAuthorizedOrganizer.objects.create(user=my_user, culture_deputy=culture_deputy)
+                return Response("Successfully granted access to add events!", status=status.HTTP_200_OK)
+        elif grant == 'false':
+            user_to_search = EventAuthorizedOrganizer.objects.filter(user=my_user, culture_deputy=culture_deputy)
+            if len(user_to_search) == 0:
+                return Response(f"Redundant! User with user_id {my_user.user_id} hasn't access to add events!",
+                                status=status.HTTP_302_FOUND)
+            else:
+                user_to_search.delete()
+                return Response("Successfully refused access to add events!", status=status.HTTP_200_OK)
+        else:
+            return Response("grant: BAD REQUEST!", status=status.HTTP_400_BAD_REQUEST)
