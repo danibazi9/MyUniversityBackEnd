@@ -2,6 +2,7 @@ import datetime
 import json
 
 from django.core.files.base import ContentFile
+from django.db.models import Q
 from django.utils.baseconv import base64
 from rest_framework import status
 from rest_framework.views import APIView
@@ -297,10 +298,19 @@ class AdminAuthAll(APIView):
             return Response("Nothing! You haven't been added as culture deputy of any organization!",
                             status=status.HTTP_404_NOT_FOUND)
 
+        search = self.request.query_params.get('search', None)
         state = self.request.query_params.get('state', None)
+
         if state is not None:
             if state == 'true':
-                users_to_show = EventAuthorizedOrganizer.objects.filter(culture_deputy=culture_deputy)
+                if search is None:
+                    users_to_show = EventAuthorizedOrganizer.objects.filter(culture_deputy=culture_deputy)
+                else:
+                    users_to_show = EventAuthorizedOrganizer.objects.filter(Q(culture_deputy=culture_deputy), (
+                                                                            Q(user__first_name__icontains=search) |
+                                                                            Q(user__last_name__icontains=search) |
+                                                                            Q(user__username__icontains=search)
+                                                                            ))
                 serializer = EventAuthorizedOrganizerSerializer(users_to_show, many=True)
 
                 data = json.loads(json.dumps(serializer.data))
@@ -314,6 +324,13 @@ class AdminAuthAll(APIView):
             else:
                 return Response("Status: BAD REQUEST!", status=status.HTTP_400_BAD_REQUEST)
         else:
-            users_to_show = Account.objects.all().exclude(user_id=culture_deputy.user_id)
+            if search is None:
+                users_to_show = Account.objects.all().exclude(user_id=culture_deputy.user_id)
+            else:
+                users_to_show = Account.objects.filter(~Q(user_id=culture_deputy.user_id), (
+                                                            Q(first_name__icontains=search) |
+                                                            Q(last_name__icontains=search) |
+                                                            Q(username__icontains=search)
+                                                       ))
             serializer = UserSerializer(users_to_show, many=True)
             return Response(serializer.data, status=status.HTTP_200_OK)
