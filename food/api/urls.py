@@ -8,6 +8,7 @@ urlpatterns = [
     path('admin/serve/', views.AdminServes.as_view()),
     path('admin/order/all/', views.AdminOrdersAll.as_view()),
     path('admin/order_history/all/', views.AdminOrdersHistoryAll.as_view()),
+    path('admin/order_history/', views.AdminHistoryByFood.as_view()),
     path('admin/order/', views.OrderFinished.as_view()),
     path('admin/serve/all/', views.AdminServesAll.as_view()),
     path('user/serve/', views.UserServes.as_view()),
