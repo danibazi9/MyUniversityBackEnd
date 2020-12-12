@@ -335,6 +335,7 @@ class AdminAuthAll(APIView):
             serializer = UserSerializer(users_to_show, many=True)
             return Response(serializer.data, status=status.HTTP_200_OK)
 
+
 @permission_classes((IsAuthenticated,))
 class AdminAuth(APIView):
     def get(self, args):
