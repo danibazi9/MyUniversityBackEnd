@@ -1,3 +1,4 @@
+from django.contrib.auth import login, authenticate
 from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.decorators import api_view, permission_classes
@@ -75,7 +76,14 @@ class TokenObtainView(ObtainAuthToken):
             'last_name': user.last_name,
             'username': user.username,
         }
-        return Response(custom_response)
+
+        user_login = authenticate(request, username=request.POST['username'], password=request.POST['password'])
+
+        if user_login is not None:
+            login(request, user_login)
+        else:
+            return Response("ERROR: Invalid login!", status=status.HTTP_401_UNAUTHORIZED)
+        return Response(custom_response, status=status.HTTP_200_OK)
 
 
 @api_view(['PUT', ])
