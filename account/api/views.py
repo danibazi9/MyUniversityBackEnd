@@ -86,6 +86,14 @@ class TokenObtainView(ObtainAuthToken):
         return Response(custom_response, status=status.HTTP_200_OK)
 
 
+@permission_classes((IsAuthenticated,))
+class logoutView(APIView):
+    def post(self, request):
+        # simply delete the token to force a login
+        request.user.auth_token.delete()
+        return Response("Successfully logged out!", status=status.HTTP_200_OK)
+
+
 @api_view(['PUT', ])
 @permission_classes((IsAuthenticated,))
 def update_account_view(request):
