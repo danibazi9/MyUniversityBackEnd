@@ -77,12 +77,6 @@ class TokenObtainView(ObtainAuthToken):
             'username': user.username,
         }
 
-        user_login = authenticate(request, username=request.POST['username'], password=request.POST['password'])
-
-        if user_login is not None:
-            login(request, user_login)
-        else:
-            return Response("ERROR: Invalid login!", status=status.HTTP_401_UNAUTHORIZED)
         return Response(custom_response, status=status.HTTP_200_OK)
 
 
