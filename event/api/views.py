@@ -136,80 +136,74 @@ class UserEvent(APIView):
             except Event.DoesNotExist:
                 return Response(f"event_id={event_id}, NOT FOUND", status=status.HTTP_404_NOT_FOUND)
 
-            serializer = EventSerializer(event, data=self.request.data)
-            if serializer.is_valid():
-                data = self.request.data
+            data = self.request.data
 
-                start_time = datetime.datetime.strptime(data['start_time'], '%Y-%m-%d %H:%M:%S')
-                start_time_datetime = datetime.datetime(year=start_time.year, month=start_time.month,
-                                                        day=start_time.day, hour=start_time.hour,
-                                                        minute=start_time.minute, second=start_time.second)
+            start_time = datetime.datetime.strptime(data['start_time'], '%Y-%m-%d %H:%M:%S')
+            start_time_datetime = datetime.datetime(year=start_time.year, month=start_time.month,
+                                                    day=start_time.day, hour=start_time.hour,
+                                                    minute=start_time.minute, second=start_time.second)
 
-                end_time = datetime.datetime.strptime(data['end_time'], '%Y-%m-%d %H:%M:%S')
-                end_time_datetime = datetime.datetime(year=end_time.year, month=end_time.month,
-                                                      day=end_time.day, hour=end_time.hour,
-                                                      minute=end_time.minute, second=end_time.second)
+            end_time = datetime.datetime.strptime(data['end_time'], '%Y-%m-%d %H:%M:%S')
+            end_time_datetime = datetime.datetime(year=end_time.year, month=end_time.month,
+                                                  day=end_time.day, hour=end_time.hour,
+                                                  minute=end_time.minute, second=end_time.second)
 
-                if start_time_datetime.timestamp() < datetime.datetime.now().timestamp():
-                    return Response(f"ERROR: the start_time of event is for the past!",
-                                    status=status.HTTP_400_BAD_REQUEST)
+            if start_time_datetime.timestamp() < datetime.datetime.now().timestamp():
+                return Response(f"ERROR: the start_time of event is for the past!",
+                                status=status.HTTP_400_BAD_REQUEST)
 
-                if end_time_datetime.timestamp() < datetime.datetime.now().timestamp():
-                    return Response(f"ERROR: the end_time of event is for the past!",
-                                    status=status.HTTP_400_BAD_REQUEST)
+            if end_time_datetime.timestamp() < datetime.datetime.now().timestamp():
+                return Response(f"ERROR: the end_time of event is for the past!",
+                                status=status.HTTP_400_BAD_REQUEST)
 
-                if start_time_datetime.timestamp() > end_time_datetime.timestamp():
-                    return Response(f"ERROR: start_time is larger than end_time!", status=status.HTTP_400_BAD_REQUEST)
+            if start_time_datetime.timestamp() > end_time_datetime.timestamp():
+                return Response(f"ERROR: start_time is larger than end_time!", status=status.HTTP_400_BAD_REQUEST)
 
-                if end_time_datetime.timestamp() - start_time_datetime.timestamp() < 1800:
-                    return Response(f"ERROR: The whole time of any event can't be less than 30 minutes!",
-                                    status=status.HTTP_400_BAD_REQUEST)
+            if end_time_datetime.timestamp() - start_time_datetime.timestamp() < 1800:
+                return Response(f"ERROR: The whole time of any event can't be less than 30 minutes!",
+                                status=status.HTTP_400_BAD_REQUEST)
 
-                file = ""
-                if 'filename' in data and 'image' in data:
-                    filename = data['filename']
-                    file = ContentFile(base64.b64decode(data['image']), name=filename)
+            file = ""
+            if 'filename' in data and 'image' in data:
+                filename = data['filename']
+                file = ContentFile(base64.b64decode(data['image']), name=filename)
 
-                description = ""
-                if 'description' in data:
-                    description = data['description']
+            description = ""
+            if 'description' in data:
+                description = data['description']
 
-                capacity = 100
-                if 'capacity' in data:
-                    capacity = int(data['capacity'])
+            capacity = 100
+            if 'capacity' in data:
+                capacity = int(data['capacity'])
 
-                if capacity < event.remaining_capacity:
-                    return Response(f"ERROR: You can't reduce the capacity of the event, "
-                                    f"{event.remaining_capacity} people have registered to event!")
+            if capacity < event.remaining_capacity:
+                return Response(f"ERROR: You can't reduce the capacity of the event, "
+                                f"{event.remaining_capacity} people have registered to event!")
 
-                cost = 0
-                if 'cost' in data:
-                    cost = data['cost']
+            cost = 0
+            if 'cost' in data:
+                cost = data['cost']
 
-                event.name = data['name']
-                event.image = file
-                event.description = description
-                event.start_time = start_time
-                event.end_time = end_time
-                event.hold_type = data['hold_type']
-                event.location = data['location']
-                event.cost = cost
-                event.remaining_capacity += (capacity - event.capacity)
-                event.capacity = capacity
+            event.name = data['name']
+            event.image = file
+            event.description = description
+            event.start_time = start_time
+            event.end_time = end_time
+            event.hold_type = data['hold_type']
+            event.location = data['location']
+            event.cost = cost
+            event.remaining_capacity += (capacity - event.capacity)
+            event.capacity = capacity
 
-                event.save()
+            event.save()
 
-                mySerializer = EventSerializer(event)
-                data = json.loads(json.dumps(mySerializer.data))
-                data['organizer'] = data['organizer'].split(",    Head")[0]
-                del data['verified']
+            mySerializer = EventSerializer(event)
+            data = json.loads(json.dumps(mySerializer.data))
+            data['organizer'] = data['organizer'].split(",    Head")[0]
+            del data['verified']
 
-                new_data = {'message': f"Event: event_id {event.event_id} has edited successfully!",
-                            'data': data}
-
-                return Response(new_data, status=status.HTTP_205_RESET_CONTENT)
-            else:
-                return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+            new_data = {'message': f"Event: event_id {event.event_id} has edited successfully!", 'data': data}
+            return Response(new_data, status=status.HTTP_205_RESET_CONTENT)
         else:
             return Response("event_id: None, BAD REQUEST ", status=status.HTTP_400_BAD_REQUEST)
 
@@ -263,7 +257,7 @@ class UserEventsHistory(APIView):
         try:
             authorized_organizer = EventAuthorizedOrganizer.objects.get(user=self.request.user)
         except EventAuthorizedOrganizer.DoesNotExist:
-            return Response("ERROR: You haven't access to show history of events!", status=status.HTTP_401_UNAUTHORIZED)
+            return Response("ERROR: You haven't access to see history of events!", status=status.HTTP_401_UNAUTHORIZED)
 
         try:
             organizer = Organization.objects.get(head_of_organization=self.request.user)
@@ -318,7 +312,7 @@ class AdminAuthAll(APIView):
                     del x['user']
                 return Response(data, status=status.HTTP_200_OK)
             else:
-                return Response("Status: BAD REQUEST!", status=status.HTTP_400_BAD_REQUEST)
+                return Response("State: BAD REQUEST!", status=status.HTTP_400_BAD_REQUEST)
         else:
             if search is None:
                 users_to_show = Account.objects.all().exclude(user_id=culture_deputy.user_id)
@@ -422,3 +416,168 @@ class AdminAuth(APIView):
                 return Response("Successfully refused access to add events!", status=status.HTTP_200_OK)
         else:
             return Response("grant: BAD REQUEST!", status=status.HTTP_400_BAD_REQUEST)
+
+
+@api_view(['GET', ])
+@permission_classes((IsAuthenticated,))
+def get_all_requests(request):
+    try:
+        culture_deputy = CultureDeputy.objects.get(user=request.user)
+    except CultureDeputy.DoesNotExist:
+        return Response("ERROR: You haven't been added as culture deputy of any faculty!",
+                        status=status.HTTP_401_UNAUTHORIZED)
+
+    if len(culture_deputy.organization_set.all()) == 0:
+        return Response("Nothing! You haven't been added as culture deputy of any organization!",
+                        status=status.HTTP_404_NOT_FOUND)
+
+    search = request.query_params.get('search', None)
+    state = request.query_params.get('state', None)
+
+    if state is not None:
+        if state == 'true':
+            if search is None:
+                events_to_show = Event.objects.filter(culture_deputy=culture_deputy, verified=True,
+                                                      end_time__gt=datetime.datetime.now())
+            else:
+                events_to_show = Event.objects.filter(culture_deputy=culture_deputy, verified=True,
+                                                      name__icontains=search, end_time__gt=datetime.datetime.now())
+            serializer = EventSerializer(events_to_show, many=True)
+
+            data = json.loads(json.dumps(serializer.data))
+            for x in data:
+                x['organizer'] = x['organizer'].split(",    Head")[0]
+                del x['verified']
+            return Response(data, status=status.HTTP_200_OK)
+        elif state == "false":
+            if search is None:
+                events_to_show = Event.objects.filter(culture_deputy=culture_deputy, verified=False,
+                                                      end_time__gt=datetime.datetime.now())
+            else:
+                events_to_show = Event.objects.filter(culture_deputy=culture_deputy, verified=False,
+                                                      name__icontains=search, end_time__gt=datetime.datetime.now())
+            serializer = EventSerializer(events_to_show, many=True)
+
+            data = json.loads(json.dumps(serializer.data))
+            for x in data:
+                x['organizer'] = x['organizer'].split(",    Head")[0]
+                del x['verified']
+            return Response(data, status=status.HTTP_200_OK)
+        else:
+            return Response("State: BAD REQUEST!", status=status.HTTP_400_BAD_REQUEST)
+    else:
+        if search is None:
+            events_to_show = Event.objects.filter(organizer__culture_deputy=culture_deputy,
+                                                  end_time__gt=datetime.datetime.now())
+        else:
+            events_to_show = Event.objects.filter(organizer__culture_deputy=culture_deputy, name__icontains=search,
+                                                  end_time__gt=datetime.datetime.now())
+        serializer = UserSerializer(events_to_show, many=True)
+        data = json.loads(json.dumps(serializer.data))
+        for x in data:
+            x['organizer'] = x['organizer'].split(",    Head")[0]
+        return Response(data, status=status.HTTP_200_OK)
+
+
+@permission_classes((IsAuthenticated,))
+class Requests(APIView):
+    def get(self, args):
+        try:
+            culture_deputy = CultureDeputy.objects.get(user=self.request.user)
+        except CultureDeputy.DoesNotExist:
+            return Response("ERROR: You haven't been added as culture deputy of any faculty!",
+                            status=status.HTTP_401_UNAUTHORIZED)
+
+        if len(culture_deputy.organization_set.all()) == 0:
+            return Response("Nothing! You haven't been added as culture deputy of any organization!",
+                            status=status.HTTP_404_NOT_FOUND)
+
+        event_id = self.request.query_params.get('event_id', None)
+
+        if event_id is not None:
+            try:
+                event_to_show = Event.objects.get(event_id=event_id)
+            except Event.DoesNotExist:
+                return Response(f"Event with event_id {event_id} NOT FOUND!", status=status.HTTP_404_NOT_FOUND)
+
+            serializer = EventSerializer(event_to_show)
+            data = json.loads(json.dumps(serializer.data))
+            data['organizer'] = data['organizer'].split(",    Head")[0]
+
+            return Response(data, status=status.HTTP_200_OK)
+        else:
+            return Response("event_id: None, BAD REQUEST!", status=status.HTTP_400_BAD_REQUEST)
+
+    def post(self, args):
+        try:
+            culture_deputy = CultureDeputy.objects.get(user=self.request.user)
+        except CultureDeputy.DoesNotExist:
+            return Response("ERROR: You haven't been added as culture deputy of any faculty!",
+                            status=status.HTTP_401_UNAUTHORIZED)
+
+        if len(culture_deputy.organization_set.all()) == 0:
+            return Response("Nothing! You haven't been added as culture deputy of any organization!",
+                            status=status.HTTP_404_NOT_FOUND)
+
+        request_body = self.request.POST.dict()
+
+        if 'event_id' not in request_body:
+            return Response("event_id: None, BAD REQUEST!", status=status.HTTP_400_BAD_REQUEST)
+        if 'verified' not in request_body:
+            return Response("verified: None, BAD REQUEST!", status=status.HTTP_400_BAD_REQUEST)
+
+        event_id = request_body['event_id']
+        verified = request_body['verified']
+
+        try:
+            my_event = Event.objects.get(event_id=event_id)
+        except Event.DoesNotExist:
+            return Response(f"Event with event_id {event_id} NOT FOUND!", status=status.HTTP_404_NOT_FOUND)
+
+        if my_event.start_time < datetime.datetime.now():
+            return Response(f"ERROR: the event start_time is for the past!", status=status.HTTP_406_NOT_ACCEPTABLE)
+
+        if my_event.end_time < datetime.datetime.now():
+            return Response(f"ERROR: the event end_time is for the past!", status=status.HTTP_406_NOT_ACCEPTABLE)
+
+        if verified == 'true':
+            if my_event.verified:
+                return Response(f"Redundant! Event with event_id {event_id} is verified!",
+                                status=status.HTTP_302_FOUND)
+            else:
+                my_event.verified = True
+                my_event.save()
+                return Response("Event successfully verified!", status=status.HTTP_200_OK)
+        elif verified == 'false':
+            if not my_event.verified:
+                return Response(f"Redundant! Event with event_id {event_id} isn't verified!",
+                                status=status.HTTP_302_FOUND)
+            else:
+                my_event.verified = False
+                my_event.save()
+                return Response("Event successfully rejected!", status=status.HTTP_200_OK)
+        else:
+            return Response("verified: BAD REQUEST!", status=status.HTTP_400_BAD_REQUEST)
+
+
+@permission_classes((IsAuthenticated,))
+class AdminRequestsHistory(APIView):
+    def get(self, args):
+        try:
+            culture_deputy = CultureDeputy.objects.get(user=self.request.user)
+        except CultureDeputy.DoesNotExist:
+            return Response("ERROR: You haven't been added as culture deputy of any faculty!",
+                            status=status.HTTP_401_UNAUTHORIZED)
+
+        if len(culture_deputy.organization_set.all()) == 0:
+            return Response("Nothing! You haven't been added as culture deputy of any organization!",
+                            status=status.HTTP_404_NOT_FOUND)
+
+        events = Event.objects.filter(culture_deputy=culture_deputy)
+        serializer = EventSerializer(events, many=True)
+
+        data = json.loads(json.dumps(serializer.data))
+        for x in data:
+            x['organizer'] = x['organizer'].split(",    Head")[0]
+
+        return Response(data, status=status.HTTP_200_OK)
