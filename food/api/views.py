@@ -232,7 +232,15 @@ class UserServesAll(APIView):
         except:
             return Response("Authentication Error! Invalid token", status=status.HTTP_400_BAD_REQUEST)
 
-        serves = Serve.objects.filter(date=datetime.datetime.now())
+        date = self.request.query_params.get('date', None)
+        if date is not None:
+            date_encoded = datetime.datetime.strptime(date, '%Y-%m-%d')
+            if date_encoded < datetime.datetime.now():
+                return Response("ERROR: the date of the serve is for the past!", status=status.HTTP_406_NOT_ACCEPTABLE)
+            serves = Serve.objects.filter(date=date_encoded)
+        else:
+            return Response("Date: None, BAD REQUEST", status=status.HTTP_400_BAD_REQUEST)
+
         serializer = UserAllServeSerializer(serves, many=True)
         data = json.loads(json.dumps(serializer.data))
         for x in data:
@@ -250,11 +258,19 @@ class UserServes(APIView):
         except:
             return Response("Authentication Error! Invalid token", status=status.HTTP_400_BAD_REQUEST)
 
+        date = self.request.query_params.get('date', None)
+        if date is not None:
+            date_encoded = datetime.datetime.strptime(date, '%Y-%m-%d')
+            if date_encoded < datetime.datetime.now():
+                return Response("ERROR: the date of the serve is for the past!", status=status.HTTP_406_NOT_ACCEPTABLE)
+        else:
+            return Response("Date: None, BAD REQUEST", status=status.HTTP_400_BAD_REQUEST)
+
         start_serve_time = self.request.query_params.get('start_time', None)
         end_serve_time = self.request.query_params.get('end_time', None)
 
         if start_serve_time is not None and end_serve_time is not None:
-            serves = Serve.objects.filter(date=datetime.datetime.now(),
+            serves = Serve.objects.filter(date=date_encoded,
                                           start_serve_time__gte=start_serve_time,
                                           end_serve_time__lte=end_serve_time)
 
