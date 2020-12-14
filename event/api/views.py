@@ -559,3 +559,25 @@ class Requests(APIView):
         else:
             return Response("verified: BAD REQUEST!", status=status.HTTP_400_BAD_REQUEST)
 
+
+@permission_classes((IsAuthenticated,))
+class AdminRequestsHistory(APIView):
+    def get(self, args):
+        try:
+            culture_deputy = CultureDeputy.objects.get(user=self.request.user)
+        except CultureDeputy.DoesNotExist:
+            return Response("ERROR: You haven't been added as culture deputy of any faculty!",
+                            status=status.HTTP_401_UNAUTHORIZED)
+
+        if len(culture_deputy.organization_set.all()) == 0:
+            return Response("Nothing! You haven't been added as culture deputy of any organization!",
+                            status=status.HTTP_404_NOT_FOUND)
+
+        events = Event.objects.filter(culture_deputy=culture_deputy)
+        serializer = EventSerializer(events, many=True)
+
+        data = json.loads(json.dumps(serializer.data))
+        for x in data:
+            x['organizer'] = x['organizer'].split(",    Head")[0]
+
+        return Response(data, status=status.HTTP_200_OK)
