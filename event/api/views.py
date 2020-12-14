@@ -477,3 +477,34 @@ def get_all_requests(request):
         for x in data:
             x['organizer'] = x['organizer'].split(",    Head")[0]
         return Response(data, status=status.HTTP_200_OK)
+
+
+@permission_classes((IsAuthenticated,))
+class Requests(APIView):
+    def get(self, args):
+        try:
+            culture_deputy = CultureDeputy.objects.get(user=self.request.user)
+        except CultureDeputy.DoesNotExist:
+            return Response("ERROR: You haven't been added as culture deputy of any faculty!",
+                            status=status.HTTP_401_UNAUTHORIZED)
+
+        if len(culture_deputy.organization_set.all()) == 0:
+            return Response("Nothing! You haven't been added as culture deputy of any organization!",
+                            status=status.HTTP_404_NOT_FOUND)
+
+        event_id = self.request.query_params.get('event_id', None)
+
+        if event_id is not None:
+            try:
+                event_to_show = Event.objects.get(event_id=event_id)
+            except Event.DoesNotExist:
+                return Response(f"Event with event_id {event_id} NOT FOUND!", status=status.HTTP_404_NOT_FOUND)
+
+            serializer = EventSerializer(event_to_show)
+            data = json.loads(json.dumps(serializer.data))
+            data['organizer'] = data['organizer'].split(",    Head")[0]
+
+            return Response(data, status=status.HTTP_200_OK)
+        else:
+            return Response("event_id: None, BAD REQUEST!", status=status.HTTP_400_BAD_REQUEST)
+
