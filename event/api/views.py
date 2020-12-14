@@ -508,3 +508,54 @@ class Requests(APIView):
         else:
             return Response("event_id: None, BAD REQUEST!", status=status.HTTP_400_BAD_REQUEST)
 
+    def post(self, args):
+        try:
+            culture_deputy = CultureDeputy.objects.get(user=self.request.user)
+        except CultureDeputy.DoesNotExist:
+            return Response("ERROR: You haven't been added as culture deputy of any faculty!",
+                            status=status.HTTP_401_UNAUTHORIZED)
+
+        if len(culture_deputy.organization_set.all()) == 0:
+            return Response("Nothing! You haven't been added as culture deputy of any organization!",
+                            status=status.HTTP_404_NOT_FOUND)
+
+        request_body = self.request.POST.dict()
+
+        if 'event_id' not in request_body:
+            return Response("event_id: None, BAD REQUEST!", status=status.HTTP_400_BAD_REQUEST)
+        if 'verified' not in request_body:
+            return Response("verified: None, BAD REQUEST!", status=status.HTTP_400_BAD_REQUEST)
+
+        event_id = request_body['event_id']
+        verified = request_body['verified']
+
+        try:
+            my_event = Event.objects.get(event_id=event_id)
+        except Event.DoesNotExist:
+            return Response(f"Event with event_id {event_id} NOT FOUND!", status=status.HTTP_404_NOT_FOUND)
+
+        if my_event.start_time < datetime.datetime.now():
+            return Response(f"ERROR: the event start_time is for the past!", status=status.HTTP_406_NOT_ACCEPTABLE)
+
+        if my_event.end_time < datetime.datetime.now():
+            return Response(f"ERROR: the event end_time is for the past!", status=status.HTTP_406_NOT_ACCEPTABLE)
+
+        if verified == 'true':
+            if my_event.verified:
+                return Response(f"Redundant! Event with event_id {event_id} is verified!",
+                                status=status.HTTP_302_FOUND)
+            else:
+                my_event.verified = True
+                my_event.save()
+                return Response("Event successfully verified!", status=status.HTTP_200_OK)
+        elif verified == 'false':
+            if not my_event.verified:
+                return Response(f"Redundant! Event with event_id {event_id} isn't verified!",
+                                status=status.HTTP_302_FOUND)
+            else:
+                my_event.verified = False
+                my_event.save()
+                return Response("Event successfully rejected!", status=status.HTTP_200_OK)
+        else:
+            return Response("verified: BAD REQUEST!", status=status.HTTP_400_BAD_REQUEST)
+
