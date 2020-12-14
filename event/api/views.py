@@ -257,7 +257,7 @@ class UserEventsHistory(APIView):
         try:
             authorized_organizer = EventAuthorizedOrganizer.objects.get(user=self.request.user)
         except EventAuthorizedOrganizer.DoesNotExist:
-            return Response("ERROR: You haven't access to show history of events!", status=status.HTTP_401_UNAUTHORIZED)
+            return Response("ERROR: You haven't access to see history of events!", status=status.HTTP_401_UNAUTHORIZED)
 
         try:
             organizer = Organization.objects.get(head_of_organization=self.request.user)
@@ -312,7 +312,7 @@ class AdminAuthAll(APIView):
                     del x['user']
                 return Response(data, status=status.HTTP_200_OK)
             else:
-                return Response("Status: BAD REQUEST!", status=status.HTTP_400_BAD_REQUEST)
+                return Response("State: BAD REQUEST!", status=status.HTTP_400_BAD_REQUEST)
         else:
             if search is None:
                 users_to_show = Account.objects.all().exclude(user_id=culture_deputy.user_id)
