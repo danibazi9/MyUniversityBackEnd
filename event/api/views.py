@@ -416,3 +416,64 @@ class AdminAuth(APIView):
                 return Response("Successfully refused access to add events!", status=status.HTTP_200_OK)
         else:
             return Response("grant: BAD REQUEST!", status=status.HTTP_400_BAD_REQUEST)
+
+
+@api_view(['GET', ])
+@permission_classes((IsAuthenticated,))
+def get_all_requests(request):
+    try:
+        culture_deputy = CultureDeputy.objects.get(user=request.user)
+    except CultureDeputy.DoesNotExist:
+        return Response("ERROR: You haven't been added as culture deputy of any faculty!",
+                        status=status.HTTP_401_UNAUTHORIZED)
+
+    if len(culture_deputy.organization_set.all()) == 0:
+        return Response("Nothing! You haven't been added as culture deputy of any organization!",
+                        status=status.HTTP_404_NOT_FOUND)
+
+    search = request.query_params.get('search', None)
+    state = request.query_params.get('state', None)
+
+    if state is not None:
+        if state == 'true':
+            if search is None:
+                events_to_show = Event.objects.filter(culture_deputy=culture_deputy, verified=True,
+                                                      end_time__gt=datetime.datetime.now())
+            else:
+                events_to_show = Event.objects.filter(culture_deputy=culture_deputy, verified=True,
+                                                      name__icontains=search, end_time__gt=datetime.datetime.now())
+            serializer = EventSerializer(events_to_show, many=True)
+
+            data = json.loads(json.dumps(serializer.data))
+            for x in data:
+                x['organizer'] = x['organizer'].split(",    Head")[0]
+                del x['verified']
+            return Response(data, status=status.HTTP_200_OK)
+        elif state == "false":
+            if search is None:
+                events_to_show = Event.objects.filter(culture_deputy=culture_deputy, verified=False,
+                                                      end_time__gt=datetime.datetime.now())
+            else:
+                events_to_show = Event.objects.filter(culture_deputy=culture_deputy, verified=False,
+                                                      name__icontains=search, end_time__gt=datetime.datetime.now())
+            serializer = EventSerializer(events_to_show, many=True)
+
+            data = json.loads(json.dumps(serializer.data))
+            for x in data:
+                x['organizer'] = x['organizer'].split(",    Head")[0]
+                del x['verified']
+            return Response(data, status=status.HTTP_200_OK)
+        else:
+            return Response("State: BAD REQUEST!", status=status.HTTP_400_BAD_REQUEST)
+    else:
+        if search is None:
+            events_to_show = Event.objects.filter(organizer__culture_deputy=culture_deputy,
+                                                  end_time__gt=datetime.datetime.now())
+        else:
+            events_to_show = Event.objects.filter(organizer__culture_deputy=culture_deputy, name__icontains=search,
+                                                  end_time__gt=datetime.datetime.now())
+        serializer = UserSerializer(events_to_show, many=True)
+        data = json.loads(json.dumps(serializer.data))
+        for x in data:
+            x['organizer'] = x['organizer'].split(",    Head")[0]
+        return Response(data, status=status.HTTP_200_OK)
