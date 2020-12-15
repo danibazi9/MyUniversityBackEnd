@@ -59,7 +59,6 @@ class Foods(APIView):
             return Response(f"BAD REQUEST! ERROR: '{e}'", status=status.HTTP_400_BAD_REQUEST)
 
     def get(self, arg):
-        print('here3')
         food_id = self.request.query_params.get('food_id', None)
         date = self.request.query_params.get('date', None)
         if food_id is not None:
@@ -280,16 +279,16 @@ class AdminHistoryByFood(APIView):
             serves = Serve.objects.filter(date=timezone.now(), seller=seller)
         else:
             serves = Serve.objects.filter(date=datetime.datetime.strptime(date, '%Y-%m-%d'), seller=seller)
-        serializer = AdminAllServeSerializer(serves, many=True)
+        serializer = AdminServeSerializer(serves, many=True)
         data = json.loads(json.dumps(serializer.data))
         result = []
         for each in data:
-            map = {'start_time': each['start_serve_time'], 'end_time': each['start_serve_time'],
-                   'date': each['date'], 'remaining_count': each['remaining_count'],
-                   'total_count': each['max_count'], 'food_id': each['food']['food_id'],
-                   'food_name': each['food']['name'], 'food_image': each['food']['image'],
-                   'food_cost': each['food']['cost']}
-            result.append(map)
+            data = {'start_time': each['start_serve_time'], 'end_time': each['start_serve_time'],
+                    'date': each['date'], 'remaining_count': each['remaining_count'],
+                    'total_count': each['max_count'], 'food_id': each['food']['food_id'],
+                    'food_name': each['food']['name'], 'food_image': each['food']['image'],
+                    'food_cost': each['food']['cost']}
+            result.append(data)
         print(result)
         return Response(result, status=status.HTTP_200_OK)
 
@@ -306,7 +305,7 @@ class AdminOrdersHistoryAll(APIView):
             orders = Order.objects.filter(last_update__date=timezone.now(), done=True)
         else:
             orders = Order.objects.filter(Q(last_update__date=datetime.datetime.strptime(date, '%Y-%m-%d'), done=True))
-        serializer = AdminOrdersAllSerializer(orders, many=True)
+        serializer = OrderSerializer(orders, many=True)
         data = json.loads(json.dumps(serializer.data))
         for x in data:
             x['customer_username'] = Account.objects.get(user_id=x['customer']).first_name + ' ' + Account.objects.get(
