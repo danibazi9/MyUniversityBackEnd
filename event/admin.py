@@ -20,15 +20,15 @@ class EventAuthorizedOrganizerAdmin(admin.ModelAdmin):
     list_filter = ['user']
 
     def username(self, obj):
-        result = get(user_id=obj.user.user_id)
+        result = Account.objects.get(user_id=obj.user.user_id)
         return result.username
 
     def first_name(self, obj):
-        result = get(user_id=obj.user.user_id)
+        result = Account.objects.get(user_id=obj.user.user_id)
         return result.first_name
 
     def last_name(self, obj):
-        result = get(user_id=obj.user.user_id)
+        result = Account.objects.get(user_id=obj.user.user_id)
         return result.last_name
 
     class Meta:
@@ -44,11 +44,11 @@ class CultureDeputyAdmin(admin.ModelAdmin):
     list_filter = ['user', 'faculty']
 
     def first_name(self, obj):
-        result = get(user_id=obj.user.user_id)
+        result = Account.objects.get(user_id=obj.user.user_id)
         return result.first_name
 
     def last_name(self, obj):
-        result = get(user_id=obj.user.user_id)
+        result = Account.objects.get(user_id=obj.user.user_id)
         return result.last_name
 
     def faculty_name(self, obj):

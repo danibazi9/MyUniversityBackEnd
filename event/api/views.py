@@ -305,7 +305,7 @@ class AdminAuthAll(APIView):
 
                 data = json.loads(json.dumps(serializer.data))
                 for x in data:
-                    user = get(user_id=x['user'])
+                    user = Account.objects.get(user_id=x['user'])
                     x['username'] = user.username
                     x['first_name'] = user.first_name
                     x['last_name'] = user.last_name
@@ -343,7 +343,7 @@ class AdminAuth(APIView):
 
         if user_id is not None:
             try:
-                my_user = get(user_id=user_id)
+                my_user = Account.objects.get(user_id=user_id)
             except EventAuthorizedOrganizer.DoesNotExist:
                 return Response(f"User with user_id {user_id} NOT FOUND!", status=status.HTTP_404_NOT_FOUND)
 
@@ -352,7 +352,7 @@ class AdminAuth(APIView):
                 serializer = EventAuthorizedOrganizerSerializer(user_to_show)
 
                 data = json.loads(json.dumps(serializer.data))
-                user = get(user_id=data['user'])
+                user = Account.objects.get(user_id=data['user'])
                 data['username'] = user.username
                 data['first_name'] = user.first_name
                 data['last_name'] = user.last_name
@@ -361,7 +361,7 @@ class AdminAuth(APIView):
 
                 return Response(data, status=status.HTTP_200_OK)
             except EventAuthorizedOrganizer.DoesNotExist:
-                user_to_show = get(user_id=user_id)
+                user_to_show = Account.objects.get(user_id=user_id)
                 data = {'username': user_to_show.username,
                         'first_name': user_to_show.first_name,
                         'last_name': user_to_show.last_name,
@@ -394,7 +394,7 @@ class AdminAuth(APIView):
         grant = request_body['grant']
 
         try:
-            my_user = get(user_id=user_id)
+            my_user = Account.objects.get(user_id=user_id)
         except Account.DoesNotExist:
             return Response(f"User with user_id {user_id} NOT FOUND!", status=status.HTTP_404_NOT_FOUND)
 
