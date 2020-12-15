@@ -1,8 +1,6 @@
-from django.db.models.functions import datetime
 from rest_framework import serializers
 
 from chat.models import *
-from MyUniversity.models import *
 
 
 class RoomSerializer(serializers.ModelSerializer):
