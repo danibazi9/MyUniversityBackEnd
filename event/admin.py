@@ -3,9 +3,9 @@ from . models import *
 
 
 class OrganizationAdmin(admin.ModelAdmin):
-    list_display = ['organization_id', 'name', 'head_of_organization']
-    search_fields = ['name', 'head_of_organization']
-    list_filter = ['name', 'head_of_organization']
+    list_display = ['organization_id', 'name', 'head_of_organization', 'culture_deputy']
+    search_fields = ['name', 'head_of_organization', 'culture_deputy']
+    list_filter = ['name', 'head_of_organization', 'culture_deputy']
 
     class Meta:
         model = Organization
@@ -15,20 +15,20 @@ admin.site.register(Organization, OrganizationAdmin)
 
 
 class EventAuthorizedOrganizerAdmin(admin.ModelAdmin):
-    list_display = ['id', 'username', 'first_name', 'last_name']
+    list_display = ['id', 'username', 'first_name', 'last_name', 'culture_deputy']
     search_fields = ['user']
     list_filter = ['user']
 
     def username(self, obj):
-        result = Account.objects.get(user_id=obj.user.user_id)
+        result = get(user_id=obj.user.user_id)
         return result.username
 
     def first_name(self, obj):
-        result = Account.objects.get(user_id=obj.user.user_id)
+        result = get(user_id=obj.user.user_id)
         return result.first_name
 
     def last_name(self, obj):
-        result = Account.objects.get(user_id=obj.user.user_id)
+        result = get(user_id=obj.user.user_id)
         return result.last_name
 
     class Meta:
@@ -44,11 +44,11 @@ class CultureDeputyAdmin(admin.ModelAdmin):
     list_filter = ['user', 'faculty']
 
     def first_name(self, obj):
-        result = Account.objects.get(user_id=obj.user.user_id)
+        result = get(user_id=obj.user.user_id)
         return result.first_name
 
     def last_name(self, obj):
-        result = Account.objects.get(user_id=obj.user.user_id)
+        result = get(user_id=obj.user.user_id)
         return result.last_name
 
     def faculty_name(self, obj):

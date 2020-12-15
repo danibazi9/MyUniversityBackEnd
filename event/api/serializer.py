@@ -24,4 +24,3 @@ class EventAuthorizedOrganizerSerializer(serializers.ModelSerializer):
     class Meta:
         model = EventAuthorizedOrganizer
         fields = ('user',)
-
