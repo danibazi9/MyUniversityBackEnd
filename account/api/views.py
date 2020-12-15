@@ -18,7 +18,6 @@ def registration_view(request):
     serializer = RegistrationSerializer(data=request.data)
     data = {}
     if serializer.is_valid():
-        email = request.data['email']
         if validate_email(serializer.validated_data.get('email')):
             # if serializer.validated_data.get('email').endswith('.iust.ac.ir'):
                 account = serializer.save()
@@ -54,10 +53,10 @@ def account_properties_view(request):
 
 @api_view(('GET',))
 def all_acounts_view(request):
-    acounts = Account.objects.all()
+    all_accounts = Account.objects.all()
 
     if request.method == 'GET':
-        serializer = AccountPropertiesSerializer(acounts, many=True)
+        serializer = AccountPropertiesSerializer(all_accounts, many=True)
         return Response(serializer.data)
 
 
@@ -75,7 +74,16 @@ class TokenObtainView(ObtainAuthToken):
             'last_name': user.last_name,
             'username': user.username,
         }
-        return Response(custom_response)
+
+        return Response(custom_response, status=status.HTTP_200_OK)
+
+
+@permission_classes((IsAuthenticated,))
+class logoutView(APIView):
+    def post(self, request):
+        # simply delete the token to force a login
+        request.user.auth_token.delete()
+        return Response("Successfully logged out!", status=status.HTTP_200_OK)
 
 
 @api_view(['PUT', ])
@@ -130,5 +138,5 @@ class SendEmail(APIView):
         email.send()
 
         serializer = AccountPropertiesSerializer(user_to_send_email)
-        json_responsed = {"email": serializer.data['email'], "vc_code": random_code_generated}
-        return Response(json_responsed)
+        json_response = {"email": serializer.data['email'], "vc_code": random_code_generated}
+        return Response(json_response)

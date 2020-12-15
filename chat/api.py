@@ -1,13 +1,10 @@
 import json
-import random
 
 from rest_framework import status
-from rest_framework.decorators import api_view
-from rest_framework.generics import get_object_or_404
+from rest_framework.decorators import api_view, permission_classes
+from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
-from rest_framework.views import APIView
 
-from .models import *
 from .serializer import *
 
 
@@ -23,11 +20,9 @@ def get_user(request):
 
 # Create your views here.
 @api_view(['GET', ])
+@permission_classes((IsAuthenticated,))
 def chat_properties_view(request):
-    try:
-        account = request.user
-    except Account.DoesNotExist:
-        return Response(status=status.HTTP_404_NOT_FOUND)
+    account = request.user
 
     if request.method == 'GET':
         rooms = Room.objects.filter(first_user_id=account) | Room.objects.filter(second_user_id=account)
@@ -40,11 +35,9 @@ def chat_properties_view(request):
 
 
 @api_view(['POST', ])
+@permission_classes((IsAuthenticated,))
 def create_room_view(request):
-    try:
-        account = request.user
-    except Account.DoesNotExist:
-        return Response("Authentication user Failed!", status=status.HTTP_404_NOT_FOUND)
+    account = request.user
 
     try:
         body = json.loads(request.body)

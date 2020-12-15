@@ -8,7 +8,6 @@ User = get_user_model()
 
 
 class ChatConsumer(WebsocketConsumer):
-
     def fetch_messages(self, data):
         room_id = data['room_id']
         room = Room.objects.get(room_id=room_id)
