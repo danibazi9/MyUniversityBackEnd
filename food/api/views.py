@@ -266,52 +266,53 @@ class UserServes(APIView):
 @permission_classes((IsAuthenticated,))
 class AdminHistoryByFood(APIView):
     def get(self, arg):
-        try:
-            date = self.request.query_params.get('date', None)
-        except:
-            return Response(f"No search was sent in params", status=status.HTTP_400_BAD_REQUEST)
-        try:
-            seller = self.request.user
-        except:
-            return Response("Couldn't find the user via token sent", status=status.HTTP_400_BAD_REQUEST)
+        seller = self.request.user
+
+        date = self.request.query_params.get('date', None)
         if date is None or len(str(date)) == 0:
-            print('search: ', date)
             serves = Serve.objects.filter(date=timezone.now(), seller=seller)
         else:
             serves = Serve.objects.filter(date=datetime.datetime.strptime(date, '%Y-%m-%d'), seller=seller)
+
         serializer = AdminServeSerializer(serves, many=True)
         data = json.loads(json.dumps(serializer.data))
+
         result = []
         for each in data:
-            data = {'start_time': each['start_serve_time'], 'end_time': each['start_serve_time'],
-                    'date': each['date'], 'remaining_count': each['remaining_count'],
-                    'total_count': each['max_count'], 'food_id': each['food']['food_id'],
-                    'food_name': each['food']['name'], 'food_image': each['food']['image'],
-                    'food_cost': each['food']['cost']}
+            data = {'start_time': each['start_serve_time'],
+                    'end_time': each['start_serve_time'],
+                    'date': each['date'],
+                    'remaining_count': each['remaining_count'],
+                    'total_count': each['max_count'],
+                    'food_id': each['food']['food_id'],
+                    'food_name': each['food']['name'],
+                    'food_image': each['food']['image'],
+                    'food_cost': each['food']['cost']
+                    }
             result.append(data)
-        print(result)
+
         return Response(result, status=status.HTTP_200_OK)
 
 
 @permission_classes((IsAuthenticated,))
 class AdminOrdersHistoryAll(APIView):
     def get(self, arg):
-        try:
-            date = self.request.query_params.get('date', None)
-        except:
-            return Response(f"No search was sent in params", status=status.HTTP_400_BAD_REQUEST)
+        date = self.request.query_params.get('date', None)
+
         if date is None or len(str(date)) == 0:
-            # print('search: ', date)
             orders = Order.objects.filter(last_update__date=timezone.now(), done=True)
         else:
             orders = Order.objects.filter(Q(last_update__date=datetime.datetime.strptime(date, '%Y-%m-%d'), done=True))
+
         serializer = OrderSerializer(orders, many=True)
         data = json.loads(json.dumps(serializer.data))
+
         for x in data:
-            x['customer_username'] = Account.objects.get(user_id=x['customer']).first_name + ' ' + Account.objects.get(
-                user_id=x['customer']).last_name
+            x['customer_username'] = Account.objects.get(user_id=x['customer']).first_name + ' ' + \
+                                     Account.objects.get(user_id=x['customer']).last_name
             x['customer_student_id'] = Account.objects.get(user_id=x['customer']).student_id
             x['items'] = []
+
             for item in x['ordered_items'].split(" + "):
                 start_index = item.split(",")[1].find(":")
                 stop_index = item.split(",")[1].find("*")
