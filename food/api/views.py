@@ -56,8 +56,7 @@ class Foods(APIView):
 
             return Response(new_data, status=status.HTTP_201_CREATED)
         except Exception as e:
-            print("ERROR: ", e)
-            return Response("BAD REQUEST!", status=status.HTTP_400_BAD_REQUEST)
+            return Response(f"BAD REQUEST! ERROR: '{e}'", status=status.HTTP_400_BAD_REQUEST)
 
     def get(self, arg):
         food_id = self.request.query_params.get('food_id', None)
@@ -107,7 +106,7 @@ class AdminServesAll(APIView):
     def get(self, arg):
         seller_id = self.request.user.user_id
 
-        date = self.request.query_params.get('date', str(timezone.now())[0:10], None)
+        date = self.request.query_params.get('date', None)
         if date is None:
             return Response("Date: None, BAD REQUEST!", status=status.HTTP_400_BAD_REQUEST)
 
@@ -183,10 +182,20 @@ class AdminServes(APIView):
                 count = each['count']
                 serve = Serve()
                 serve.date = datetime.datetime.strptime(date, '%Y-%m-%d')
-                serve.food = Food.objects.get(food_id=food_id)
+
+                try:
+                    serve.food = Food.objects.get(food_id=food_id)
+                except Food.DoesNotExist:
+                    return Response(f"Food with food_id {food_id} NOT FOUND!", status=status.HTTP_404_NOT_FOUND)
+
                 serve.start_serve_time = datetime.datetime.strptime(start_time, '%H:%M:%S')
                 serve.end_serve_time = datetime.datetime.strptime(end_time, '%H:%M:%S')
-                serve.seller = Account.objects.get(user_id=seller_id)
+
+                try:
+                    serve.seller = Account.objects.get(user_id=seller_id)
+                except Account.DoesNotExist:
+                    return Response(f"Seller with user_id {seller_id} NOT FOUND!", status=status.HTTP_404_NOT_FOUND)
+
                 serve.max_count = count
                 serve.remaining_count = count
                 serve.save()
@@ -194,8 +203,7 @@ class AdminServes(APIView):
             return Response('Success!', status=status.HTTP_201_CREATED)
 
         except Exception as e:
-            print('Error: ', e)
-            return Response("BAD REQUEST!", status=status.HTTP_400_BAD_REQUEST)
+            return Response(f"BAD REQUEST! ERROR: '{e}'", status=status.HTTP_400_BAD_REQUEST)
 
 
 @permission_classes((IsAuthenticated,))
@@ -204,18 +212,24 @@ class UserServesAll(APIView):
         date = self.request.query_params.get('date', None)
         if date is not None:
             date_encoded = datetime.datetime.strptime(date, '%Y-%m-%d')
-            if date_encoded < datetime.datetime.now():
+            if date_encoded.date() < datetime.datetime.now().date():
                 return Response("ERROR: the date of the serve is for the past!", status=status.HTTP_406_NOT_ACCEPTABLE)
-            serves = Serve.objects.filter(date=date_encoded)
+            serves = Serve.objects.filter(date=date_encoded.date())
         else:
             return Response("Date: None, BAD REQUEST", status=status.HTTP_400_BAD_REQUEST)
 
-        serializer = UserAllServeSerializer(serves, many=True)
-        data = json.loads(json.dumps(serializer.data))
-        for x in data:
-            for key in x['food'].keys():
-                x[key] = x['food'][key]
-            del x['food']
+        # serializer = UserAllServeSerializer(serves, many=True)
+        # data = json.loads(json.dumps(serializer.data))
+        # for x in data:
+        #     for key in x['food'].keys():
+        #         x[key] = x['food'][key]
+        #     del x['food']
+
+        data = []
+        for serve in serves:
+            dic = {'start_serve_time': serve.start_serve_time, 'end_serve_time': serve.end_serve_time}
+            if dic not in data:
+                data.append(dic)
         return Response(data, status=status.HTTP_200_OK)
 
 
@@ -225,7 +239,7 @@ class UserServes(APIView):
         date = self.request.query_params.get('date', None)
         if date is not None:
             date_encoded = datetime.datetime.strptime(date, '%Y-%m-%d')
-            if date_encoded < datetime.datetime.now():
+            if date_encoded.date() < datetime.datetime.now().date():
                 return Response("ERROR: the date of the serve is for the past!", status=status.HTTP_406_NOT_ACCEPTABLE)
         else:
             return Response("Date: None, BAD REQUEST", status=status.HTTP_400_BAD_REQUEST)
@@ -234,7 +248,7 @@ class UserServes(APIView):
         end_serve_time = self.request.query_params.get('end_time', None)
 
         if start_serve_time is not None and end_serve_time is not None:
-            serves = Serve.objects.filter(date=date_encoded,
+            serves = Serve.objects.filter(date=date_encoded.date(),
                                           start_serve_time__gte=start_serve_time,
                                           end_serve_time__lte=end_serve_time)
 
