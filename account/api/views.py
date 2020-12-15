@@ -1,4 +1,3 @@
-from django.contrib.auth import login, authenticate
 from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.decorators import api_view, permission_classes
@@ -19,7 +18,6 @@ def registration_view(request):
     serializer = RegistrationSerializer(data=request.data)
     data = {}
     if serializer.is_valid():
-        email = request.data['email']
         if validate_email(serializer.validated_data.get('email')):
             # if serializer.validated_data.get('email').endswith('.iust.ac.ir'):
                 account = serializer.save()
@@ -55,10 +53,10 @@ def account_properties_view(request):
 
 @api_view(('GET',))
 def all_acounts_view(request):
-    acounts = Account.objects.all()
+    all_accounts = Account.objects.all()
 
     if request.method == 'GET':
-        serializer = AccountPropertiesSerializer(acounts, many=True)
+        serializer = AccountPropertiesSerializer(all_accounts, many=True)
         return Response(serializer.data)
 
 
@@ -140,5 +138,5 @@ class SendEmail(APIView):
         email.send()
 
         serializer = AccountPropertiesSerializer(user_to_send_email)
-        json_responsed = {"email": serializer.data['email'], "vc_code": random_code_generated}
-        return Response(json_responsed)
+        json_response = {"email": serializer.data['email'], "vc_code": random_code_generated}
+        return Response(json_response)
