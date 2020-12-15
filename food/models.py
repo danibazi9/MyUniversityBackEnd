@@ -1,4 +1,3 @@
-from django.db import models
 from account.models import *
 from django.utils import timezone
 

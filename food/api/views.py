@@ -2,7 +2,6 @@ import datetime
 import json
 from django.core.files.base import ContentFile
 import base64
-import django.utils.timezone
 from django.db.models import Q
 from rest_framework import status
 from rest_framework.views import APIView
@@ -10,12 +9,16 @@ from rest_framework.response import Response
 from rest_framework.decorators import permission_classes, api_view
 from rest_framework.permissions import IsAuthenticated
 from .serializer import *
-# from datetime import datetime
 from food.models import *
 from account.models import *
 
 
 class Times(APIView):
+    def get(self, arg):
+        times = Time.objects.all()
+        serializer = TimeSerializer(times, many=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
     def post(self, arg):
         serializer = TimeSerializer(data=self.request.data)
         if serializer.is_valid():
@@ -23,11 +26,6 @@ class Times(APIView):
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         else:
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-
-    def get(self, arg):
-        times = Time.objects.all()
-        serializer = TimeSerializer(times, many=True)
-        return Response(serializer.data, status=status.HTTP_200_OK)
 
 
 # this view is to get all available foods (foods menu)
@@ -56,8 +54,9 @@ class Foods(APIView):
             food.save()
             new_data['food_id'] = food.food_id
             return Response(new_data, status=status.HTTP_201_CREATED)
-        except:
-            return Response('error', status=status.HTTP_400_BAD_REQUEST)
+        except Exception as e:
+            print("ERROR: ", e)
+            return Response("BAD REQUEST!", status=status.HTTP_400_BAD_REQUEST)
 
     def get(self, arg):
         food_id = self.request.query_params.get('food_id', None)
@@ -65,11 +64,10 @@ class Foods(APIView):
             try:
                 food = Food.objects.get(food_id=food_id)
                 serves = Serve.objects.filter(food=food)
-                print(serves)
-                serve_serializer = AdminAllServeSerializer(serves, many=True)
+
+                serve_serializer = AdminServeSerializer(serves, many=True)
             except Food.DoesNotExist:
                 return Response(f"food_id={food_id}, NOT FOUND", status=status.HTTP_404_NOT_FOUND)
-            serializer = FoodSerializer(food)
             return Response(serve_serializer.data, status=status.HTTP_200_OK)
         else:
             return Response("food_id: None, BAD REQUEST ", status=status.HTTP_400_BAD_REQUEST)
@@ -106,60 +104,52 @@ class Foods(APIView):
 @permission_classes((IsAuthenticated,))
 class AdminServesAll(APIView):
     def get(self, arg):
-        try:
-            seller_id = self.request.user.user_id
-            date = self.request.query_params.get('date', str(timezone.now())[0:10])
-            print('date: ', date)
-        except:
-            return Response("Authentication Error! Invalid token", status=status.HTTP_400_BAD_REQUEST)
-        try:
-            # print(django.utils.timezone.now())
-            serves = Serve.objects.filter(seller=seller_id, date=datetime.datetime.strptime(date, '%Y-%m-%d'))
-        except:
-            return Response("BAD REQUEST", status=status.HTTP_400_BAD_REQUEST)
-        serializer = AdminAllServeSerializer(serves, many=True)
+        seller_id = self.request.user.user_id
+
+        date = self.request.query_params.get('date', str(timezone.now())[0:10], None)
+        if date is None:
+            return Response("Date: None, BAD REQUEST!", status=status.HTTP_400_BAD_REQUEST)
+
+        serves = Serve.objects.filter(seller=seller_id, date=datetime.datetime.strptime(date, '%Y-%m-%d'))
+        serializer = AdminServeSerializer(serves, many=True)
+
         data = json.loads(json.dumps(serializer.data))
         for x in data:
             for key in x['food'].keys():
                 x[key] = x['food'][key]
             del x['food']
-        # print(data)
+
         result = []
-        foodIds = []
+        food_ids = []
+
         for x in data:
-            if x['food_id'] in foodIds:
-                pass
-            else:
+            if x['food_id'] not in food_ids:
                 result.append(x)
-                foodIds.append(x['food_id'])
-        # print(result)
-        # print(datetime.now())
+                food_ids.append(x['food_id'])
         return Response(result, status=status.HTTP_200_OK)
 
 
 @permission_classes((IsAuthenticated,))
 class AdminServes(APIView):
     def get(self, arg):
-        try:
-            seller_id = self.request.user.user_id
-        except:
-            return Response(f"seller_id: None, BAD REQUEST", status=status.HTTP_400_BAD_REQUEST)
+        seller_id = self.request.user.user_id
+
         try:
             serve = Serve.objects.get(seller=seller_id)
-        except:
-            return Response(f"food_id: None, BAD REQUEST", status=status.HTTP_400_BAD_REQUEST)
+        except Serve.DoesNotExist:
+            return Response(f"Serve NOT FOUND!", status=status.HTTP_404_NOT_FOUND)
+
         serializer = AdminServeSerializer(serve, data=self.request.data)
         return Response(serializer.data, status=status.HTTP_200_OK)
 
     def put(self, arg):
-        try:
-            seller_id = self.request.user.user_id
-        except:
-            return Response("Authentication Error! Invalid token", status=status.HTTP_400_BAD_REQUEST)
+        seller_id = self.request.user.user_id
+
         try:
             serve = Serve.objects.get(seller=seller_id)
         except Serve.DoesNotExist:
-            return Response("Serve: NOT FOUND!", status=status.HTTP_404_NOT_FOUND)
+            return Response(f"Serve NOT FOUND!", status=status.HTTP_404_NOT_FOUND)
+
         serializer = AdminServeSerializer(serve, data=self.request.data)
         if serializer.is_valid():
             serializer.save()
@@ -168,30 +158,23 @@ class AdminServes(APIView):
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
     def delete(self, arg):
-        try:
-            seller_id = self.request.user.user_id
-        except:
-            return Response("Authentication Error! Invalid token", status=status.HTTP_400_BAD_REQUEST)
+        seller_id = self.request.user.user_id
+
         try:
             serve = Serve.objects.get(seller=seller_id)
         except Serve.DoesNotExist:
-            return Response("BAD REQUEST", status=status.HTTP_400_BAD_REQUEST)
+            return Response("ERROR: Serve NOT FOUND!", status=status.HTTP_404_NOT_FOUND)
         serve.delete()
         return Response(f"seller_id: {seller_id}, DELETED", status=status.HTTP_200_OK)
 
     def post(self, arg):
+        seller_id = self.request.user.user_id
 
         try:
-            seller_id = self.request.user.user_id
-        except:
-            return Response("Authentication Error! Invalid token", status=status.HTTP_400_BAD_REQUEST)
+            data = self.request.data
+            food_id = data['food_id']
+            times_list = data['list']
 
-        # print(self.request.data)
-        # return Response('ok')
-        try:
-            map = self.request.data
-            food_id = map['food_id']
-            times_list = map['list']
             for each in times_list:
                 start_time = each['start_time']
                 end_time = each['end_time']
@@ -202,36 +185,20 @@ class AdminServes(APIView):
                 serve.food = Food.objects.get(food_id=food_id)
                 serve.start_serve_time = datetime.datetime.strptime(start_time, '%H:%M:%S')
                 serve.end_serve_time = datetime.datetime.strptime(end_time, '%H:%M:%S')
-                serve.seller = Account.objects.get(user_id=seller_id)
+                serve.seller = get(user_id=seller_id)
                 serve.max_count = count
                 serve.remaining_count = count
                 serve.save()
-            return Response('success', status=status.HTTP_201_CREATED)
+            return Response('Success!', status=status.HTTP_201_CREATED)
 
         except Exception as e:
-            print('error is: ', e)
-            return Response("BAD REQUEST", status=status.HTTP_400_BAD_REQUEST)
-
-    # try:
-    #     serve = Serve.objects.get(seller=seller_id)
-    # except Serve.DoesNotExist:
-    #     return Response("BAD REQUEST", status=status.HTTP_400_BAD_REQUEST)
-    # serializer = AdminServeSerializer(serve, data=self.request.data)
-    # if serializer.is_valid():
-    #     serializer.save()
-    #     return Response(serializer.data, status=status.HTTP_201_CREATED)
-    # else:
-    #     return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+            print('Error: ', e)
+            return Response("BAD REQUEST!", status=status.HTTP_400_BAD_REQUEST)
 
 
 @permission_classes((IsAuthenticated,))
 class UserServesAll(APIView):
     def get(self, arg):
-        try:
-            user_id = self.request.user.user_id
-        except:
-            return Response("Authentication Error! Invalid token", status=status.HTTP_400_BAD_REQUEST)
-
         date = self.request.query_params.get('date', None)
         if date is not None:
             date_encoded = datetime.datetime.strptime(date, '%Y-%m-%d')
@@ -253,11 +220,6 @@ class UserServesAll(APIView):
 @permission_classes((IsAuthenticated,))
 class UserServes(APIView):
     def get(self, arg):
-        try:
-            user_id = self.request.user.user_id
-        except:
-            return Response("Authentication Error! Invalid token", status=status.HTTP_400_BAD_REQUEST)
-
         date = self.request.query_params.get('date', None)
         if date is not None:
             date_encoded = datetime.datetime.strptime(date, '%Y-%m-%d')
@@ -288,24 +250,23 @@ class UserServes(APIView):
 @permission_classes((IsAuthenticated,))
 class AdminOrdersAll(APIView):
     def get(self, arg):
-        try:
-            search = self.request.query_params.get('search', None)
-        except:
-            return Response(f"No search was sent in params", status=status.HTTP_400_BAD_REQUEST)
+        search = self.request.query_params.get('search', None)
         if search is None or len(str(search)) == 0:
-            print('search: ', search)
             orders = Order.objects.filter(last_update__date=timezone.now(), done=False)
         else:
             orders = Order.objects.filter(Q(last_update__date=timezone.now(), done=False),
-                                          Q(customer__first_name__icontains=search) | Q(
-                                              customer__last_name__icontains=search))
-        serializer = AdminOrdersAllSerializer(orders, many=True)
+                                          Q(customer__first_name__icontains=search) |
+                                          Q(customer__last_name__icontains=search))
+
+        serializer = OrderSerializer(orders, many=True)
         data = json.loads(json.dumps(serializer.data))
+
         for x in data:
-            x['customer_username'] = Account.objects.get(user_id=x['customer']).first_name + ' ' + Account.objects.get(
-                user_id=x['customer']).last_name
-            x['customer_student_id'] = Account.objects.get(user_id=x['customer']).student_id
+            x['customer_username'] = get(user_id=x['customer']).first_name + ' ' +\
+                                     get(user_id=x['customer']).last_name
+            x['customer_student_id'] = get(user_id=x['customer']).student_id
             x['items'] = []
+
             for item in x['ordered_items'].split(" + "):
                 start_index = item.split(",")[1].find(":")
                 stop_index = item.split(",")[1].find("*")
@@ -323,10 +284,7 @@ class AdminOrdersAll(APIView):
 @permission_classes((IsAuthenticated,))
 class OrdersAll(APIView):
     def get(self, arg):
-        try:
-            customer_id = self.request.user.user_id
-        except:
-            return Response(f"Authentication Error! Invalid token", status=status.HTTP_400_BAD_REQUEST)
+        customer_id = self.request.user.user_id
 
         orders = Order.objects.filter(customer=customer_id)
         serializer = OrderSerializer(orders, many=True)
@@ -337,17 +295,15 @@ class OrdersAll(APIView):
 class OrderFinished(APIView):
     def post(self, arg):
         try:
-            customer_id = self.request.user.user_id
-        except:
-            return Response(f"Authentication Error! Invalid token", status=status.HTTP_400_BAD_REQUEST)
-        try:
             order_id = self.request.query_params.get('order_id', None)
             order = Order.objects.get(order_id=order_id)
-        except:
-            return Response(f"Bad request: order_id not sent or not found", status=status.HTTP_400_BAD_REQUEST)
+        except Order.DoesNotExist:
+            return Response(f"BAD REQUEST: order_id not sent or not found", status=status.HTTP_400_BAD_REQUEST)
+
         done = self.request.data['done']
         order.done = done
         order.save()
+
         serializer = OrderSerializer(order)
         return Response(serializer.data, status=status.HTTP_200_OK)
 
@@ -355,11 +311,6 @@ class OrderFinished(APIView):
 @permission_classes((IsAuthenticated,))
 class OrderProperties(APIView):
     def get(self, args):
-        try:
-            user_id = self.request.user.user_id
-        except:
-            return Response(f"Authentication Error! Invalid token", status=status.HTTP_400_BAD_REQUEST)
-
         order_id = self.request.query_params.get('order_id', None)
         if order_id is not None:
             try:
@@ -376,11 +327,7 @@ class OrderProperties(APIView):
 @permission_classes((IsAuthenticated,))
 class AddOrder(APIView):
     def post(self, args):
-        try:
-            customer = self.request.user
-        except:
-            return Response(f"Authentication Error! Invalid token", status=status.HTTP_400_BAD_REQUEST)
-
+        customer = self.request.user
         request_body = json.loads(self.request.body)
 
         if 'food_list' not in request_body:
@@ -391,7 +338,7 @@ class AddOrder(APIView):
         if len(food_list) == 0:
             return Response("BAD REQUEST, food_list is empty!", status=status.HTTP_400_BAD_REQUEST)
 
-        serveid_count_dict = {}
+        serve_id_count_dict = {}
         for food in food_list:
             if 'serve_id' not in food:
                 return Response("BAD REQUEST, serve_id required in food_list!", status=status.HTTP_400_BAD_REQUEST)
@@ -420,18 +367,18 @@ class AddOrder(APIView):
                                 f"{serve_to_choose.remaining_count} food to serve",
                                 status=status.HTTP_406_NOT_ACCEPTABLE)
 
-            serveid_count_dict[serve_id] = count
+            serve_id_count_dict[serve_id] = count
 
         ordered_items_list = []
         total_price = 0
 
-        for key in serveid_count_dict.keys():
+        for key in serve_id_count_dict.keys():
             serve_to_reduce_count = Serve.objects.get(serve_id=key)
-            serve_to_reduce_count.remaining_count -= serveid_count_dict[key]
+            serve_to_reduce_count.remaining_count -= serve_id_count_dict[key]
             serve_to_reduce_count.save()
             ordered_items_list.append(f"{serve_to_reduce_count.food.name}, "
-                                      f"Price: {serveid_count_dict[key]} * {serve_to_reduce_count.food.cost}R")
-            total_price += serveid_count_dict[key] * serve_to_reduce_count.food.cost
+                                      f"Price: {serve_id_count_dict[key]} * {serve_to_reduce_count.food.cost}R")
+            total_price += serve_id_count_dict[key] * serve_to_reduce_count.food.cost
 
         Order.objects.create(customer=customer,
                              total_price=total_price,
@@ -442,11 +389,6 @@ class AddOrder(APIView):
 @permission_classes((IsAuthenticated,))
 class EditOrder(APIView):
     def put(self, arg):
-        try:
-            customer = self.request.user
-        except:
-            return Response(f"Authentication Error! Invalid token", status=status.HTTP_400_BAD_REQUEST)
-
         request_body = json.loads(self.request.body)
 
         if 'food_list' not in request_body:
@@ -466,8 +408,8 @@ class EditOrder(APIView):
         else:
             return Response("order_id: None, BAD REQUEST ", status=status.HTTP_400_BAD_REQUEST)
 
-        serveid_count_dict = {}
-        serveid_before_count_dict = {}
+        serve_id_count_dict = {}
+        serve_id_before_count_dict = {}
 
         for food in food_list:
             if 'serve_id' not in food:
@@ -520,25 +462,25 @@ class EditOrder(APIView):
                 #                     f"that {before_count} of them are reserved by you",
                 #                     status=status.HTTP_406_NOT_ACCEPTABLE)
 
-                serveid_before_count_dict[serve_to_choose.food.name] = before_count
-            serveid_count_dict[serve_id] = count
+                serve_id_before_count_dict[serve_to_choose.food.name] = before_count
+            serve_id_count_dict[serve_id] = count
 
         ordered_items_list = []
         total_price = 0
 
-        for key in serveid_before_count_dict.keys():
+        for key in serve_id_before_count_dict.keys():
             serve_to_change = Serve.objects.get(food__name=key)
-            serve_to_change.remaining_count += serveid_before_count_dict[key]
+            serve_to_change.remaining_count += serve_id_before_count_dict[key]
             serve_to_change.save()
 
-        for key in serveid_count_dict.keys():
+        for key in serve_id_count_dict.keys():
             serve_to_change = Serve.objects.get(serve_id=key)
-            serve_to_change.remaining_count -= serveid_count_dict[key]
+            serve_to_change.remaining_count -= serve_id_count_dict[key]
             serve_to_change.save()
 
             ordered_items_list.append(f"{serve_to_change.food.name}, "
-                                      f"Price: {serveid_count_dict[key]} * {serve_to_change.food.cost}R")
-            total_price += serveid_count_dict[key] * serve_to_change.food.cost
+                                      f"Price: {serve_id_count_dict[key]} * {serve_to_change.food.cost}R")
+            total_price += serve_id_count_dict[key] * serve_to_change.food.cost
 
         order_to_edit.ordered_items = " + ".join(ordered_items_list)
         order_to_edit.total_price = total_price
@@ -549,12 +491,8 @@ class EditOrder(APIView):
 @permission_classes((IsAuthenticated,))
 class DeleteOrder(APIView):
     def delete(self, arg):
-        try:
-            customer = self.request.user
-        except:
-            return Response(f"Authentication Error! Invalid token", status=status.HTTP_400_BAD_REQUEST)
-
         order_id = self.request.query_params.get('order_id', None)
+
         if order_id is not None:
             try:
                 order_to_delete = Order.objects.get(order_id=order_id)
@@ -563,7 +501,7 @@ class DeleteOrder(APIView):
         else:
             return Response("order_id: None, BAD REQUEST ", status=status.HTTP_400_BAD_REQUEST)
 
-        serveid_before_count_dict = {}
+        serve_id_before_count_dict = {}
         for order_item in order_to_delete.ordered_items.split(" + "):
             try:
                 serve_to_choose = Serve.objects.get(food__name=order_item.split(",")[0])
@@ -589,11 +527,11 @@ class DeleteOrder(APIView):
                 return Response(f"ERROR! Can't cancel the food {serve_to_choose.food.name} "
                                 f"with serve_id {serve_to_choose.serve_id} because out of maximum")
 
-            serveid_before_count_dict[serve_to_choose.serve_id] = before_count
+            serve_id_before_count_dict[serve_to_choose.serve_id] = before_count
 
-        for key in serveid_before_count_dict.keys():
+        for key in serve_id_before_count_dict.keys():
             serve_to_increase_count = Serve.objects.get(serve_id=key)
-            serve_to_increase_count.remaining_count += serveid_before_count_dict[key]
+            serve_to_increase_count.remaining_count += serve_id_before_count_dict[key]
             serve_to_increase_count.save()
 
         order_to_delete.delete()
@@ -603,14 +541,12 @@ class DeleteOrder(APIView):
 @permission_classes((IsAuthenticated,))
 class OrderHistory(APIView):
     def get(self, args):
-        try:
-            customer = self.request.user
-        except:
-            return Response(f"Authentication Error! Invalid token", status=status.HTTP_400_BAD_REQUEST)
+        customer = self.request.user
 
         orders = Order.objects.filter(customer=customer)
         serializer = OrderSerializer(orders, many=True)
         data = json.loads(json.dumps(serializer.data))
+
         for x in data:
             x['items'] = []
             for item in x['ordered_items'].split(" + "):

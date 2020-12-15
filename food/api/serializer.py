@@ -1,5 +1,4 @@
 from rest_framework import serializers
-from account.models import Account
 from food.models import *
 
 
@@ -17,19 +16,11 @@ class FoodSerializer(serializers.ModelSerializer):
         fields = '__all__'
 
 
-class AdminAllServeSerializer(serializers.ModelSerializer):
-    food = FoodSerializer(read_only=True)
-
-    class Meta:
-        model = Serve
-        fields = '__all__'
-
-
 class AdminServeSerializer(serializers.ModelSerializer):
     food = FoodSerializer(read_only=True)
 
     class Meta:
-        model = Order
+        model = Serve
         fields = '__all__'
 
 
@@ -47,14 +38,6 @@ class UserServeSerializer(serializers.ModelSerializer):
     class Meta:
         model = Serve
         fields = ('serve_id', 'food', 'remaining_count', 'max_count')
-
-
-class AdminOrdersAllSerializer(serializers.ModelSerializer):
-    last_update = serializers.DateTimeField(format="%Y-%m-%d %H:%M:%S")
-
-    class Meta:
-        model = Order
-        fields = ('order_id', 'customer', 'total_price', 'ordered_items', 'last_update', 'done')
 
 
 class OrderSerializer(serializers.ModelSerializer):
