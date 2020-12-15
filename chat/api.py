@@ -41,7 +41,7 @@ def create_room_view(request):
 
     try:
         body = json.loads(request.body)
-        sender = get(user_id=body['user_id'])
+        sender = Account.objects.get(user_id=body['user_id'])
     except Account.DoesNotExist:
         return Response(f"The account with user_id {request.POST.get('user_id')} doesn't exist!",
                         status=status.HTTP_404_NOT_FOUND)

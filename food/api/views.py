@@ -42,7 +42,7 @@ class Foods(APIView):
     def post(self, arg):
         try:
             data = self.request.data
-            print(data['price'])
+
             new_data = {}
             filename = data['filename']
             file = ContentFile(base64.b64decode(data['image']), name=filename)
@@ -53,6 +53,7 @@ class Foods(APIView):
             food.description = data['description']
             food.save()
             new_data['food_id'] = food.food_id
+
             return Response(new_data, status=status.HTTP_201_CREATED)
         except Exception as e:
             print("ERROR: ", e)
@@ -185,10 +186,11 @@ class AdminServes(APIView):
                 serve.food = Food.objects.get(food_id=food_id)
                 serve.start_serve_time = datetime.datetime.strptime(start_time, '%H:%M:%S')
                 serve.end_serve_time = datetime.datetime.strptime(end_time, '%H:%M:%S')
-                serve.seller = get(user_id=seller_id)
+                serve.seller = Account.objects.get(user_id=seller_id)
                 serve.max_count = count
                 serve.remaining_count = count
                 serve.save()
+
             return Response('Success!', status=status.HTTP_201_CREATED)
 
         except Exception as e:
@@ -262,9 +264,9 @@ class AdminOrdersAll(APIView):
         data = json.loads(json.dumps(serializer.data))
 
         for x in data:
-            x['customer_username'] = get(user_id=x['customer']).first_name + ' ' +\
-                                     get(user_id=x['customer']).last_name
-            x['customer_student_id'] = get(user_id=x['customer']).student_id
+            x['customer_username'] = Account.objects.get(user_id=x['customer']).first_name + ' ' +\
+                                     Account.objects.get(user_id=x['customer']).last_name
+            x['customer_student_id'] = Account.objects.get(user_id=x['customer']).student_id
             x['items'] = []
 
             for item in x['ordered_items'].split(" + "):
