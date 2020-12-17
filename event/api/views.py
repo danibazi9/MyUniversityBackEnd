@@ -399,7 +399,7 @@ class AdminAuth(APIView):
             return Response("Nothing! You haven't been added as culture deputy of any organization!",
                             status=status.HTTP_404_NOT_FOUND)
 
-        request_body = self.request.POST.dict()
+        request_body = json.loads(self.request.body)
 
         if 'user_id' not in request_body:
             return Response("user_id: None, BAD REQUEST!", status=status.HTTP_400_BAD_REQUEST)
@@ -536,7 +536,7 @@ class Requests(APIView):
             return Response("Nothing! You haven't been added as culture deputy of any organization!",
                             status=status.HTTP_404_NOT_FOUND)
 
-        request_body = self.request.POST.dict()
+        request_body = json.loads(self.request.body)
 
         if 'event_id' not in request_body:
             return Response("event_id: None, BAD REQUEST!", status=status.HTTP_400_BAD_REQUEST)
@@ -551,10 +551,7 @@ class Requests(APIView):
         except Event.DoesNotExist:
             return Response(f"Event with event_id {event_id} NOT FOUND!", status=status.HTTP_404_NOT_FOUND)
 
-        if my_event.start_time < datetime.datetime.now():
-            return Response(f"ERROR: the event start_time is for the past!", status=status.HTTP_406_NOT_ACCEPTABLE)
-
-        if my_event.end_time < datetime.datetime.now():
+        if my_event.end_time.timestamp() < datetime.datetime.now().timestamp():
             return Response(f"ERROR: the event end_time is for the past!", status=status.HTTP_406_NOT_ACCEPTABLE)
 
         if verified == 'true':
