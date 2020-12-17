@@ -294,13 +294,15 @@ class AdminAuthAll(APIView):
         if state is not None:
             if state == 'true':
                 if search is None:
-                    users_to_show = EventAuthorizedOrganizer.objects.filter(culture_deputy=culture_deputy)
+                    users_to_show = EventAuthorizedOrganizer.objects.filter(culture_deputy=culture_deputy). \
+                        exclude(user_id=culture_deputy.user_id)
                 else:
-                    users_to_show = EventAuthorizedOrganizer.objects.filter(Q(culture_deputy=culture_deputy), (
-                                                                            Q(user__first_name__icontains=search) |
-                                                                            Q(user__last_name__icontains=search) |
-                                                                            Q(user__username__icontains=search)
-                                                                            ))
+                    users_to_show = EventAuthorizedOrganizer.objects.filter(Q(culture_deputy=culture_deputy),
+                                                                            ~Q(user__user_id=culture_deputy.user_id),
+                                                                            (Q(user__first_name__icontains=search) |
+                                                                             Q(user__last_name__icontains=search) |
+                                                                             Q(user__username__icontains=search)
+                                                                             ))
                 serializer = EventAuthorizedOrganizerSerializer(users_to_show, many=True)
 
                 data = json.loads(json.dumps(serializer.data))
@@ -309,6 +311,7 @@ class AdminAuthAll(APIView):
                     x['username'] = user.username
                     x['first_name'] = user.first_name
                     x['last_name'] = user.last_name
+                    x['state'] = True
                     del x['user']
                 return Response(data, status=status.HTTP_200_OK)
             else:
@@ -318,12 +321,21 @@ class AdminAuthAll(APIView):
                 users_to_show = Account.objects.all().exclude(user_id=culture_deputy.user_id)
             else:
                 users_to_show = Account.objects.filter(~Q(user_id=culture_deputy.user_id), (
-                                                            Q(first_name__icontains=search) |
-                                                            Q(last_name__icontains=search) |
-                                                            Q(username__icontains=search)
-                                                       ))
+                        Q(first_name__icontains=search) |
+                        Q(last_name__icontains=search) |
+                        Q(username__icontains=search)
+                ))
             serializer = UserSerializer(users_to_show, many=True)
-            return Response(serializer.data, status=status.HTTP_200_OK)
+
+            data = json.loads(json.dumps(serializer.data))
+            for x in data:
+                try:
+                    EventAuthorizedOrganizer.objects.get(user__username=x['username'])
+                    x['state'] = True
+                except EventAuthorizedOrganizer.DoesNotExist:
+                    x['state'] = False
+
+            return Response(data, status=status.HTTP_200_OK)
 
 
 @permission_classes((IsAuthenticated,))
@@ -437,10 +449,10 @@ def get_all_requests(request):
     if state is not None:
         if state == 'true':
             if search is None:
-                events_to_show = Event.objects.filter(culture_deputy=culture_deputy, verified=True,
+                events_to_show = Event.objects.filter(organizer__culture_deputy=culture_deputy, verified=True,
                                                       end_time__gt=datetime.datetime.now())
             else:
-                events_to_show = Event.objects.filter(culture_deputy=culture_deputy, verified=True,
+                events_to_show = Event.objects.filter(organizer__culture_deputy=culture_deputy, verified=True,
                                                       name__icontains=search, end_time__gt=datetime.datetime.now())
             serializer = EventSerializer(events_to_show, many=True)
 
@@ -451,10 +463,10 @@ def get_all_requests(request):
             return Response(data, status=status.HTTP_200_OK)
         elif state == "false":
             if search is None:
-                events_to_show = Event.objects.filter(culture_deputy=culture_deputy, verified=False,
+                events_to_show = Event.objects.filter(organizer__culture_deputy=culture_deputy, verified=False,
                                                       end_time__gt=datetime.datetime.now())
             else:
-                events_to_show = Event.objects.filter(culture_deputy=culture_deputy, verified=False,
+                events_to_show = Event.objects.filter(organizer__culture_deputy=culture_deputy, verified=False,
                                                       name__icontains=search, end_time__gt=datetime.datetime.now())
             serializer = EventSerializer(events_to_show, many=True)
 
@@ -472,7 +484,8 @@ def get_all_requests(request):
         else:
             events_to_show = Event.objects.filter(organizer__culture_deputy=culture_deputy, name__icontains=search,
                                                   end_time__gt=datetime.datetime.now())
-        serializer = UserSerializer(events_to_show, many=True)
+
+        serializer = EventSerializer(events_to_show, many=True)
         data = json.loads(json.dumps(serializer.data))
         for x in data:
             x['organizer'] = x['organizer'].split(",    Head")[0]
