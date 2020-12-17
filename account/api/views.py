@@ -104,21 +104,10 @@ def update_account_view(request):
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
-def get_user(request):
-    try:
-        account = request.user
-    except Account.DoesNotExist:
-        return Response(status=status.HTTP_404_NOT_FOUND)
-
-    if request.method == 'GET':
-        return account
-
-
+@permission_classes((IsAuthenticated,))
 class SendEmail(APIView):
     def get(self, request):
-        user_to_send_email = get_user(request)
-        if not user_to_send_email:
-            return Response(f"User Not Found!", status=status.HTTP_404_NOT_FOUND)
+        user_to_send_email = self.request.user
 
         random_code_generated = random.randrange(100000, 999999)
 
