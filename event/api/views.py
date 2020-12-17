@@ -295,32 +295,34 @@ class AdminAuthAll(APIView):
             if state == 'true':
                 if search is None:
                     users_to_show = EventAuthorizedOrganizer.objects.filter(culture_deputy=culture_deputy). \
-                        exclude(user_id=culture_deputy.user_id)
+                        exclude(user_id=culture_deputy.user_id).exclude(is_admin=True)
                 else:
                     users_to_show = EventAuthorizedOrganizer.objects.filter(Q(culture_deputy=culture_deputy),
                                                                             ~Q(user__user_id=culture_deputy.user_id),
                                                                             (Q(user__first_name__icontains=search) |
                                                                              Q(user__last_name__icontains=search) |
                                                                              Q(user__username__icontains=search)
-                                                                             ))
+                                                                             )).exclude(user__is_admin=True)
                 serializer = EventAuthorizedOrganizerSerializer(users_to_show, many=True)
 
                 data = json.loads(json.dumps(serializer.data))
                 for x in data:
                     user = Account.objects.get(user_id=x['user'])
+                    x['user_id'] = user.user_id
                     x['username'] = user.username
                     x['first_name'] = user.first_name
                     x['last_name'] = user.last_name
-                    x['state'] = True
+                    x['grant'] = True
                     del x['user']
                 return Response(data, status=status.HTTP_200_OK)
             else:
                 return Response("State: BAD REQUEST!", status=status.HTTP_400_BAD_REQUEST)
         else:
             if search is None:
-                users_to_show = Account.objects.all().exclude(user_id=culture_deputy.user_id)
+                users_to_show = Account.objects.all().exclude(user_id=culture_deputy.user_id).exclude(is_admin=True)
             else:
-                users_to_show = Account.objects.filter(~Q(user_id=culture_deputy.user_id), (
+                users_to_show = Account.objects.filter(~Q(user_id=culture_deputy.user_id),
+                                                       ~Q(is_admin=True), (
                         Q(first_name__icontains=search) |
                         Q(last_name__icontains=search) |
                         Q(username__icontains=search)
@@ -331,9 +333,9 @@ class AdminAuthAll(APIView):
             for x in data:
                 try:
                     EventAuthorizedOrganizer.objects.get(user__username=x['username'])
-                    x['state'] = True
+                    x['grant'] = True
                 except EventAuthorizedOrganizer.DoesNotExist:
-                    x['state'] = False
+                    x['grant'] = False
 
             return Response(data, status=status.HTTP_200_OK)
 
@@ -364,20 +366,22 @@ class AdminAuth(APIView):
                 serializer = EventAuthorizedOrganizerSerializer(user_to_show)
 
                 data = json.loads(json.dumps(serializer.data))
-                user = Account.objects.get(user_id=data['user'])
+                user = Account.objects.get(username=data['user']['username'])
+                data['user_id'] = user.user_id
                 data['username'] = user.username
                 data['first_name'] = user.first_name
                 data['last_name'] = user.last_name
-                data['grant'] = 'true'
+                data['grant'] = True
                 del data['user']
 
                 return Response(data, status=status.HTTP_200_OK)
             except EventAuthorizedOrganizer.DoesNotExist:
                 user_to_show = Account.objects.get(user_id=user_id)
-                data = {'username': user_to_show.username,
+                data = {'user_id': user_to_show.user_id,
+                        'username': user_to_show.username,
                         'first_name': user_to_show.first_name,
                         'last_name': user_to_show.last_name,
-                        'grant': 'false'
+                        'grant': False
                         }
 
                 return Response(data, status=status.HTTP_200_OK)

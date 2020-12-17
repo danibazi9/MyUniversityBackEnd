@@ -16,7 +16,7 @@ class UserSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Account
-        fields = ('username', 'first_name', 'last_name')
+        fields = ('user_id', 'username', 'first_name', 'last_name')
 
 
 class EventAuthorizedOrganizerSerializer(serializers.ModelSerializer):
