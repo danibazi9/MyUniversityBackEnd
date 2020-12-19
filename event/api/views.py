@@ -18,13 +18,22 @@ from ..models import *
 @permission_classes((IsAuthenticated,))
 def get_all_events(request):
     all_events = Event.objects.filter(end_time__gt=datetime.datetime.now(), verified=True)
+    events_registered = RegisterEvent.objects.filter(registrant__username=request.user.username)
+    list_of_registered = [event.event_id for event in events_registered]
+
     serializer = EventSerializer(all_events, many=True)
     data = json.loads(json.dumps(serializer.data))
+
+    data_without_self = []
     for x in data:
+        if x['event_id'] not in list_of_registered:
+            data_without_self.append(x)
+
+    for x in data_without_self:
         x['organizer'] = x['organizer'].split(",    Head")[0]
         del x['verified']
 
-    return Response(data, status=status.HTTP_200_OK)
+    return Response(data_without_self, status=status.HTTP_200_OK)
 
 
 @permission_classes((IsAuthenticated,))
@@ -593,5 +602,24 @@ class AdminRequestsHistory(APIView):
         data = json.loads(json.dumps(serializer.data))
         for x in data:
             x['organizer'] = x['organizer'].split(",    Head")[0]
+
+        return Response(data, status=status.HTTP_200_OK)
+
+
+@permission_classes((IsAuthenticated,))
+class UserRegisterEvent(APIView):
+    def get(self, args):
+        registrant = self.request.user
+
+        registered_events = RegisterEvent.objects.filter(registrant__user_id=registrant.user_id)
+        serializer = RegisterEventSerializer(registered_events, many=True)
+
+        data = json.loads(json.dumps(serializer.data))
+        for x in data:
+            for key in x['event'].keys():
+                x[key] = x['event'][key]
+            del x['event']
+            x['organizer'] = x['organizer'].split(",    Head")[0]
+            del x['verified']
 
         return Response(data, status=status.HTTP_200_OK)
