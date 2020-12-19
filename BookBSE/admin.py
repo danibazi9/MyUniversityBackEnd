@@ -2,7 +2,6 @@ from django.contrib import admin
 from BookBSE.models import *
 
 
-# Register your models here.
 class FacultyAdmin(admin.ModelAdmin):
     list_display = ['id', 'name']
     search_fields = ['name']
