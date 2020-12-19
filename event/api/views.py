@@ -623,3 +623,62 @@ class UserRegisterEvent(APIView):
             del x['verified']
 
         return Response(data, status=status.HTTP_200_OK)
+
+    def post(self, args):
+        registrant = self.request.user
+
+        request_body = json.loads(self.request.body)
+
+        if 'event_id' not in request_body:
+            return Response("event_id: None, BAD REQUEST!", status=status.HTTP_400_BAD_REQUEST)
+        if 'register' not in request_body:
+            return Response("register: None, BAD REQUEST!", status=status.HTTP_400_BAD_REQUEST)
+
+        event_id = request_body['event_id']
+        event_to_register = Event.objects.get(event_id=event_id)
+
+        register = request_body['register']
+
+        if register == 'true':
+            try:
+                RegisterEvent.objects.get(registrant__user_id=registrant.user_id, event_id=event_id)
+                return Response(f"Redundant! User with user_id {registrant.user_id} has registered in"
+                                f" event with event_id {event_id}!", status=status.HTTP_302_FOUND)
+            except RegisterEvent.DoesNotExist:
+                if event_to_register.end_time.timestamp() < datetime.datetime.now().timestamp():
+                    return Response(f"ERROR: Event with end_time {event_to_register.end_time} is for the past, "
+                                    f"you can't register in it!", status=status.HTTP_406_NOT_ACCEPTABLE)
+
+                if event_to_register.remaining_capacity <= 0:
+                    return Response(
+                        f"No more capacity to register! Just {event_to_register.remaining_capacity} remained!",
+                        status=status.HTTP_406_NOT_ACCEPTABLE)
+
+                register_event = RegisterEvent.objects.create(event=event_to_register, registrant=registrant)
+                register_event.save()
+
+                event_to_register.remaining_capacity -= 1
+                event_to_register.save()
+                return Response("Successfully registered!", status=status.HTTP_200_OK)
+        elif register == 'false':
+            try:
+                event_to_remove = RegisterEvent.objects.get(registrant__user_id=registrant.user_id, event_id=event_id)
+
+                if event_to_remove.event.end_time.timestamp() < datetime.datetime.now().timestamp():
+                    return Response(f"ERROR: Event with end_time {event_to_register.end_time} is for the past, "
+                                    f"you can't cancel it!", status=status.HTTP_406_NOT_ACCEPTABLE)
+            except RegisterEvent.DoesNotExist:
+                return Response(f"Redundant! User with user_id {registrant.user_id} hasn't registered in"
+                                f" event with event_id {event_id}!", status=status.HTTP_302_FOUND)
+
+            if event_to_register.remaining_capacity + 1 <= event_to_register.capacity:
+                event_to_register.remaining_capacity += 1
+                event_to_register.save()
+
+                event_to_remove.delete()
+            else:
+                return Response("ERROR: Can't cancel. Remaining capacity is more than the maximum!",
+                                status=status.HTTP_406_NOT_ACCEPTABLE)
+            return Response("Successfully canceled!", status=status.HTTP_200_OK)
+        else:
+            return Response("register: BAD REQUEST!", status=status.HTTP_400_BAD_REQUEST)
