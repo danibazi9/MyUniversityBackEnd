@@ -63,7 +63,8 @@ admin.site.register(CultureDeputy, CultureDeputyAdmin)
 
 
 class EventAdmin(admin.ModelAdmin):
-    list_display = ['event_id', 'name', 'organizer', 'start_time', 'end_time', 'verified']
+    list_display = ['event_id', 'name', 'organizer', 'start_time', 'end_time',
+                    'verified', 'remaining_capacity', 'capacity']
     search_fields = ['name', 'organizer', 'description']
     list_filter = ['organizer', 'hold_type', 'verified']
 
@@ -72,3 +73,31 @@ class EventAdmin(admin.ModelAdmin):
 
 
 admin.site.register(Event, EventAdmin)
+
+
+class RegisterEventAdmin(admin.ModelAdmin):
+    list_display = ['registerevent_id', 'username', 'first_name', 'last_name', 'event_name']
+    search_fields = ['event', 'registrant']
+    list_filter = ['event', 'registrant']
+
+    def username(self, obj):
+        result = Account.objects.get(user_id=obj.registrant.user_id)
+        return result.username
+
+    def first_name(self, obj):
+        result = Account.objects.get(user_id=obj.registrant.user_id)
+        return result.first_name
+
+    def last_name(self, obj):
+        result = Account.objects.get(user_id=obj.registrant.user_id)
+        return result.last_name
+
+    def event_name(self, obj):
+        result = Event.objects.get(event_id=obj.event.event_id)
+        return result.name
+
+    class Meta:
+        model = RegisterEvent
+
+
+admin.site.register(RegisterEvent, RegisterEventAdmin)
