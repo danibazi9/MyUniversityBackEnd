@@ -9,5 +9,6 @@ urlpatterns = [
     path('admin/requests/history/', views.AdminRequestsHistory.as_view()),
     path('user/all/', views.get_all_events),
     path('user/', views.UserEvent.as_view()),
+    path('user/register/', views.UserRegisterEvent.as_view()),
     path('user/history/', views.UserEventsHistory.as_view()),
 ]
