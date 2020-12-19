@@ -24,3 +24,11 @@ class EventAuthorizedOrganizerSerializer(serializers.ModelSerializer):
     class Meta:
         model = EventAuthorizedOrganizer
         fields = ('user',)
+
+
+class RegisterEventSerializer(serializers.ModelSerializer):
+    event = EventSerializer(read_only=True)
+
+    class Meta:
+        model = RegisterEvent
+        fields = ('event',)
