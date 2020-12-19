@@ -57,3 +57,13 @@ class Event(models.Model):
     def __str__(self):
         return self.name + "    Organized by: " + self.organizer.name + \
                " Remaining capacity: " + str(self.remaining_capacity)
+
+
+class RegisterEvent(models.Model):
+    registerevent_id = models.AutoField(primary_key=True)
+    event = models.ForeignKey(Event, on_delete=models.CASCADE)
+    registrant = models.ForeignKey(Account, on_delete=models.CASCADE)
+
+    def __str__(self):
+        return "Registrant: " + self.registrant.first_name + " " + self.registrant.last_name + \
+               ", Event: " + self.event.name
