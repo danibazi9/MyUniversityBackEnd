@@ -638,6 +638,13 @@ class OrderHistory(APIView):
                 price = int(item.split(",")[1][stop_index + 1:r_index].strip())
 
                 item_dict = {'name': item.split(",")[0], 'count': count, 'price': price}
+
+                try:
+                    food_image = Food.objects.get(name=item_dict['name']).image.url
+                    item_dict['image'] = food_image
+                except Food.DoesNotExist:
+                    item_dict['image'] = ""
+
                 x['items'].append(item_dict)
             del x['ordered_items']
 
