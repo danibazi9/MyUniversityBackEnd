@@ -1,8 +1,27 @@
 from django.db import models
 
-
-# Create your models here.
 from BookBSE.models import Faculty
+
+
+class Times(models.Model):
+    time_id = models.AutoField(primary_key=True)
+
+    WEEKDAY_CHOICES = (
+        ('Saturday', 'شنبه'),
+        ('Sunday', 'یکشنبه'),
+        ('Monday', 'دوشنبه'),
+        ('Tuesday', 'سه‌شنبه'),
+        ('Wednesday', 'چهارشنبه'),
+        ('Thursday', 'پنج‌شنبه'),
+        ('Friday', 'جمعه'),
+    )
+    weekday = models.CharField(max_length=20, choices=WEEKDAY_CHOICES)
+    date = models.DateField
+    start_time = models.TimeField()
+    end_time = models.TimeField()
+
+    def __str__(self):
+        return self.weekday + str(self.start_time) + " , " + str(self.end_time)
 
 
 class ResearchAxis(models.Model):
@@ -26,6 +45,7 @@ class Professor(models.Model):
         ('Assistant Professor', 'استادیار'),
     )
     academic_rank = models.CharField(max_length=20, choices=RANK_CHOICES)
+    free_times = models.ManyToManyField(Times, blank=True)
     direct_telephone = models.CharField(max_length=11, blank=True)
     address = models.CharField(max_length=100, blank=True)
     email = models.EmailField(max_length=50)
