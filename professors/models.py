@@ -3,7 +3,7 @@ from django.db import models
 from BookBSE.models import Faculty
 
 
-class Times(models.Model):
+class Time(models.Model):
     time_id = models.AutoField(primary_key=True)
 
     WEEKDAY_CHOICES = (
@@ -16,7 +16,6 @@ class Times(models.Model):
         ('Friday', 'جمعه'),
     )
     weekday = models.CharField(max_length=20, choices=WEEKDAY_CHOICES)
-    date = models.DateField
     start_time = models.TimeField()
     end_time = models.TimeField()
 
@@ -45,7 +44,7 @@ class Professor(models.Model):
         ('Assistant Professor', 'استادیار'),
     )
     academic_rank = models.CharField(max_length=20, choices=RANK_CHOICES)
-    free_times = models.ManyToManyField(Times, blank=True)
+    free_times = models.ManyToManyField(Time, blank=True)
     direct_telephone = models.CharField(max_length=11, blank=True)
     address = models.CharField(max_length=100, blank=True)
     email = models.EmailField(max_length=50)
