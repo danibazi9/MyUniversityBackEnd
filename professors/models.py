@@ -5,6 +5,14 @@ from django.db import models
 from BookBSE.models import Faculty
 
 
+class ResearchAxis(models.Model):
+    researchaxis_id = models.AutoField(primary_key=True)
+    subject = models.CharField(max_length=100)
+
+    def __str__(self):
+        return self.subject
+
+
 class Professor(models.Model):
     professor_id = models.AutoField(primary_key=True)
     first_name = models.CharField(max_length=100)
@@ -21,7 +29,7 @@ class Professor(models.Model):
     direct_telephone = models.CharField(max_length=11, blank=True)
     address = models.CharField(max_length=100, blank=True)
     email = models.EmailField(max_length=50)
-    research_axes = models.TextField(blank=True)
+    research_axes = models.ManyToManyField(ResearchAxis, blank=True)
     bachelor = models.CharField(max_length=200, blank=True)
     masters = models.CharField(max_length=200, blank=True)
     phd = models.CharField(max_length=200, blank=True)
