@@ -207,6 +207,12 @@ class AdminProfessor(APIView):
 
         data = self.request.data
 
+        if 'first_name' not in data:
+            return Response("first_name: None, BAD REQUEST!", status=status.HTTP_400_BAD_REQUEST)
+
+        if 'last_name' not in data:
+            return Response("last_name: None, BAD REQUEST!", status=status.HTTP_400_BAD_REQUEST)
+
         if 'faculty_id' in data:
             try:
                 faculty = Faculty.objects.get(id=data['faculty_id'])
@@ -215,6 +221,15 @@ class AdminProfessor(APIView):
                                 status=status.HTTP_404_NOT_FOUND)
         else:
             return Response("Faculty_id: None, BAD REQUEST!", status=status.HTTP_400_BAD_REQUEST)
+
+        if 'email' not in data:
+            return Response("email: None, BAD REQUEST!", status=status.HTTP_400_BAD_REQUEST)
+
+        if 'academic_rank' not in data:
+            return Response("academic_rank: None, BAD REQUEST!", status=status.HTTP_400_BAD_REQUEST)
+        else:
+            if data['academic_rank'] not in ['Professor', 'Assistant Professor', 'Associate Professor']:
+                return Response('ERROR: academic_rank, BAD REQUEST!', status=status.HTTP_400_BAD_REQUEST)
 
         file = ""
         if 'filename' in data and 'image' in data:
@@ -257,12 +272,28 @@ class AdminProfessor(APIView):
         if 'active' in data:
             if data['active'] == 'false':
                 active = False
-            else:
-                return Response("Active: BAD REQUEST!", status=status.HTTP_400_BAD_REQUEST)
+            elif data['active'] != 'true':
+                return Response("Active: BAD REQUEST!", status=status.HTTP_400_BAD_REQUEST)\
+
+        if 'free_times_list' in data:
+            for free_time_id in data['free_times_list']:
+                try:
+                    Time.objects.get(time_id=free_time_id)
+                except Time.DoesNotExist:
+                    return Response(f"Time with time_id {free_time_id} NOT FOUND!",
+                                    status=status.HTTP_404_NOT_FOUND)
+
+        if 'research_axes_list' in data:
+            for research_axis_id in data['research_axes_list']:
+                try:
+                    ResearchAxis.objects.get(research_axis_id=research_axis_id)
+                except ResearchAxis.DoesNotExist:
+                    return Response(f"Research axis with research_axis_id {research_axis_id} NOT FOUND!",
+                                    status=status.HTTP_404_NOT_FOUND)
 
         try:
             professor = Professor(first_name=data['first_name'],
-                                  last_name=data['first_name'],
+                                  last_name=data['last_name'],
                                   faculty=faculty,
                                   image=file,
                                   academic_rank=data['academic_rank'],
@@ -278,25 +309,14 @@ class AdminProfessor(APIView):
                                   active=active
                                   )
 
-            if 'free_times_list' in data:
-                for free_time_id in data['free_times_list']:
-                    try:
-                        Time.objects.get(time_id=free_time_id)
-                    except Time.DoesNotExist:
-                        return Response(f"Time with time_id {free_time_id} NOT FOUND!", status=status.HTTP_404_NOT_FOUND)
+            professor.save()
 
+            if 'free_times_list' in data:
                 for free_time_id in data['free_times_list']:
                     time = Time.objects.get(time_id=free_time_id)
                     professor.free_times.add(time)
 
             if 'research_axes_list' in data:
-                for research_axis_id in data['research_axes_list']:
-                    try:
-                        ResearchAxis.objects.get(research_axis_id=research_axis_id)
-                    except ResearchAxis.DoesNotExist:
-                        return Response(f"Research axis with research_axis_id {research_axis_id} NOT FOUND!",
-                                        status=status.HTTP_404_NOT_FOUND)
-
                 for research_axis_id in data['research_axes_list']:
                     research_axis = ResearchAxis.objects.get(research_axis_id=research_axis_id)
                     professor.research_axes.add(research_axis)
@@ -324,6 +344,6 @@ class AdminProfessor(APIView):
                                 status=status.HTTP_404_NOT_FOUND)
 
             return Response(f"Professor with professor_id {professor_id} removed successfully!",
-                            status=status.HTTP_201_CREATED)
+                            status=status.HTTP_200_OK)
         else:
             return Response("Professor_id: None, BAD REQUEST", status=status.HTTP_400_BAD_REQUEST)
