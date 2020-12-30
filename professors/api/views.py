@@ -103,3 +103,22 @@ def get_research_axes(request):
 
     data = json.loads(json.dumps(serializer.data))
     return Response(data, status=status.HTTP_200_OK)
+
+
+@permission_classes((IsAuthenticated,))
+class UserGetProfessor(APIView):
+    def get(self, args):
+        professor_id = self.request.query_params.get('professor_id', None)
+        if professor_id is not None:
+            try:
+                professor = Professor.objects.get(professor_id=professor_id)
+            except Professor.DoesNotExist:
+                return Response(f"Professor with professor_id {professor_id} NOT FOUND!",
+                                status=status.HTTP_404_NOT_FOUND)
+
+            serializer = ProfessorSerializer(professor)
+
+            data = json.loads(json.dumps(serializer.data))
+            return Response(data, status=status.HTTP_200_OK)
+        else:
+            return Response("Professor_id: None, BAD REQUEST", status=status.HTTP_400_BAD_REQUEST)
