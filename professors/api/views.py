@@ -56,3 +56,12 @@ def get_all_professors(request):
         data = json.loads(json.dumps(serializer.data))
         return Response(data, status=status.HTTP_200_OK)
 
+
+@api_view(['GET', ])
+@permission_classes((IsAuthenticated,))
+def get_all_times(request):
+    all_times = Time.objects.all()
+    serializer = TimeSerializer(all_times, many=True)
+
+    data = json.loads(json.dumps(serializer.data))
+    return Response(data, status=status.HTTP_200_OK)
