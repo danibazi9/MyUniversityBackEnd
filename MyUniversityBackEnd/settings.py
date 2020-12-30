@@ -44,6 +44,7 @@ INSTALLED_APPS = [
     'BookBSE',
     'food',
     'event',
+    'professors',
 ]
 
 AUTH_USER_MODEL = 'account.Account'
