@@ -76,3 +76,30 @@ def get_all_faculties(request):
     data = json.loads(json.dumps(serializer.data))
     return Response(data, status=status.HTTP_200_OK)
 
+
+@api_view(['GET', ])
+@permission_classes((IsAuthenticated,))
+def get_research_axes(request):
+    faculty_id = request.query_params.get('faculty_id', None)
+    search = request.query_params.get('search', None)
+
+    if faculty_id is not None:
+        try:
+            Faculty.objects.get(id=faculty_id)
+        except Faculty.DoesNotExist:
+            return Response(f"Faculty with faculty_id {faculty_id} NOT FOUND!")
+    else:
+        return Response(f"Faculty_id: None, BAD REQUEST!", status=status.HTTP_400_BAD_REQUEST)
+
+    if search is None:
+        research_axes_to_show = ResearchAxis.objects.filter(faculty__id=faculty_id)
+    else:
+        research_axes_to_show = ResearchAxis.objects.filter(Q(faculty__id=faculty_id),
+                                                            Q(faculty_name__icontains=search) |
+                                                            Q(subject__icontains=search)
+                                                            )
+
+    serializer = ResearchAxisSerializer(research_axes_to_show, many=True)
+
+    data = json.loads(json.dumps(serializer.data))
+    return Response(data, status=status.HTTP_200_OK)
