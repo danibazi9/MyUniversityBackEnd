@@ -234,3 +234,23 @@ class AdminProfessor(APIView):
             return Response(new_data, status=status.HTTP_201_CREATED)
         except Exception as e:
             return Response(f"ERROR: {e}", status=status.HTTP_400_BAD_REQUEST)
+
+    def delete(self, args):
+        user = self.request.user
+
+        if user.role != 'admin-all':
+            return Response("UNAUTHORIZED! You haven't been added as admin-all!", status=status.HTTP_401_UNAUTHORIZED)
+
+        professor_id = self.request.query_params.get('professor_id', None)
+        if professor_id is not None:
+            try:
+                professor = Professor.objects.get(professor_id=professor_id)
+                professor.delete()
+            except Professor.DoesNotExist:
+                return Response(f"Redundant! Professor with professor_id {professor_id} NOT FOUND!",
+                                status=status.HTTP_404_NOT_FOUND)
+
+            return Response(f"Professor with professor_id {professor_id} removed successfully!",
+                            status=status.HTTP_201_CREATED)
+        else:
+            return Response("Professor_id: None, BAD REQUEST", status=status.HTTP_400_BAD_REQUEST)
