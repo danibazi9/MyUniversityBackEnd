@@ -65,3 +65,14 @@ def get_all_times(request):
 
     data = json.loads(json.dumps(serializer.data))
     return Response(data, status=status.HTTP_200_OK)
+
+
+@api_view(['GET', ])
+@permission_classes((IsAuthenticated,))
+def get_all_faculties(request):
+    all_faculties = Faculty.objects.all()
+    serializer = FacultySerializer(all_faculties, many=True)
+
+    data = json.loads(json.dumps(serializer.data))
+    return Response(data, status=status.HTTP_200_OK)
+
