@@ -20,7 +20,7 @@ class ResearchAxisAdmin(admin.ModelAdmin):
     list_filter = ['faculty']
 
     def faculty_name(self, obj):
-        result = Faculty.objects.get(id=obj.id)
+        result = Faculty.objects.get(name=obj.faculty)
         return result.name
 
     class Meta:

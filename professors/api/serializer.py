@@ -3,8 +3,6 @@ from ..models import *
 
 
 class ProfessorSerializer(serializers.ModelSerializer):
-    free_times = serializers.StringRelatedField(format="%H:%M")
-    research_axes = serializers.StringRelatedField(read_only=True)
     faculty = serializers.StringRelatedField(read_only=True)
 
     class Meta:
@@ -13,9 +11,8 @@ class ProfessorSerializer(serializers.ModelSerializer):
 
 
 class TimeSerializer(serializers.ModelSerializer):
-    start_time = serializers.StringRelatedField(format="%H:%M")
-    end_time = serializers.StringRelatedField(format="%H:%M")
-    weekday = serializers.StringRelatedField(read_only=True)
+    start_time = serializers.StringRelatedField(read_only=True)
+    end_time = serializers.StringRelatedField(read_only=True)
 
     class Meta:
         model = Time

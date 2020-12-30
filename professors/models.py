@@ -20,7 +20,7 @@ class Time(models.Model):
     end_time = models.TimeField()
 
     def __str__(self):
-        return self.weekday + str(self.start_time) + " , " + str(self.end_time)
+        return self.weekday + ' ' + str(self.start_time) + "-" + str(self.end_time)
 
 
 class ResearchAxis(models.Model):
