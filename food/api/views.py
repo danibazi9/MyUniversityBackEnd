@@ -214,7 +214,7 @@ class UserServesAll(APIView):
             date_encoded = datetime.datetime.strptime(date, '%Y-%m-%d')
             if date_encoded.date() < datetime.datetime.now().date():
                 return Response("ERROR: the date of the serve is for the past!", status=status.HTTP_406_NOT_ACCEPTABLE)
-            serves = Serve.objects.filter(date=date_encoded.date())
+            serves = Serve.objects.filter(date=date_encoded.date(), end_serve_time__gt=datetime.datetime.now())
         else:
             return Response("Date: None, BAD REQUEST", status=status.HTTP_400_BAD_REQUEST)
 
