@@ -40,6 +40,54 @@ def get_all_professors(request):
         serializer = ProfessorSerializer(professors_to_show, many=True)
 
         data = json.loads(json.dumps(serializer.data))
+
+        for x in data:
+            if x['academic_rank'] == 'Assistant Professor':
+                x['academic_rank'] = 'استادیار'
+            elif x['academic_rank'] == 'Associate Professor':
+                x['academic_rank'] = 'دانشیار'
+            elif x['academic_rank'] == 'Professor':
+                x['academic_rank'] = 'استاد'
+
+            free_times_list = []
+            for free_time_id in x['free_times']:
+                free_time = Time.objects.get(time_id=free_time_id)
+
+                serializer = TimeSerializer(free_time)
+                time_data = json.loads(json.dumps(serializer.data))
+
+                if time_data['weekday'] == 'Saturday':
+                    time_data['weekday'] = 'شنبه'
+                elif time_data['weekday'] == 'Sunday':
+                    time_data['weekday'] = 'یکشنبه'
+                elif time_data['weekday'] == 'Monday':
+                    time_data['weekday'] = 'دوشنبه'
+                elif time_data['weekday'] == 'Tuesday':
+                    time_data['weekday'] = 'سه‌شنبه'
+                elif time_data['weekday'] == 'Wednesday':
+                    time_data['weekday'] = 'چهارشنبه'
+                elif time_data['weekday'] == 'Thursday':
+                    time_data['weekday'] = 'پنج‌شنبه'
+                elif time_data['weekday'] == 'Friday':
+                    time_data['weekday'] = 'جمعه'
+
+                time = time_data['weekday'] + ' ' + ':'.join(time_data['start_time'].split(':')[:2]) + "-" + \
+                       ':'.join(time_data['end_time'].split(':')[:2])
+
+                free_times_list.append(time)
+
+            x['free_times'] = free_times_list
+
+            research_axes_list = []
+            for research_axis_id in x['research_axes']:
+                research_axis = ResearchAxis.objects.get(research_axis_id=research_axis_id)
+
+                serializer = ResearchAxisSerializer(research_axis)
+                data_research_axis = json.loads(json.dumps(serializer.data))
+
+                research_axes_list.append(data_research_axis['subject'])
+
+            x['research_axes'] = research_axes_list
         return Response(data, status=status.HTTP_200_OK)
     else:
         if search is None:
@@ -54,6 +102,54 @@ def get_all_professors(request):
         serializer = ProfessorSerializer(professors_to_show, many=True)
 
         data = json.loads(json.dumps(serializer.data))
+
+        for x in data:
+            if x['academic_rank'] == 'Assistant Professor':
+                x['academic_rank'] = 'استادیار'
+            elif x['academic_rank'] == 'Associate Professor':
+                x['academic_rank'] = 'دانشیار'
+            elif x['academic_rank'] == 'Professor':
+                x['academic_rank'] = 'استاد'
+
+            free_times_list = []
+            for free_time_id in x['free_times']:
+                free_time = Time.objects.get(time_id=free_time_id)
+
+                serializer = TimeSerializer(free_time)
+                time_data = json.loads(json.dumps(serializer.data))
+
+                if time_data['weekday'] == 'Saturday':
+                    time_data['weekday'] = 'شنبه'
+                elif time_data['weekday'] == 'Sunday':
+                    time_data['weekday'] = 'یکشنبه'
+                elif time_data['weekday'] == 'Monday':
+                    time_data['weekday'] = 'دوشنبه'
+                elif time_data['weekday'] == 'Tuesday':
+                    time_data['weekday'] = 'سه‌شنبه'
+                elif time_data['weekday'] == 'Wednesday':
+                    time_data['weekday'] = 'چهارشنبه'
+                elif time_data['weekday'] == 'Thursday':
+                    time_data['weekday'] = 'پنج‌شنبه'
+                elif time_data['weekday'] == 'Friday':
+                    time_data['weekday'] = 'جمعه'
+
+                time = time_data['weekday'] + ' ' + ':'.join(time_data['start_time'].split(':')[:2]) + "-" + \
+                       ':'.join(time_data['end_time'].split(':')[:2])
+
+                free_times_list.append(time)
+
+            x['free_times'] = free_times_list
+
+            research_axes_list = []
+            for research_axis_id in x['research_axes']:
+                research_axis = ResearchAxis.objects.get(research_axis_id=research_axis_id)
+
+                serializer = ResearchAxisSerializer(research_axis)
+                data_research_axis = json.loads(json.dumps(serializer.data))
+
+                research_axes_list.append(data_research_axis['subject'])
+
+            x['research_axes'] = research_axes_list
         return Response(data, status=status.HTTP_200_OK)
 
 
