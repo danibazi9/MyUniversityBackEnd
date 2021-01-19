@@ -28,6 +28,7 @@ def registration_view(request):
                 data['username'] = account.username
                 data['first_name'] = account.first_name
                 data['last_name'] = account.last_name
+                data['role'] = account.role
                 return Response(data=data, status=status.HTTP_201_CREATED)
             # else:
             #     return Response(f"The email '{serializer['email'].value}' isn't the academical university email",
@@ -73,6 +74,7 @@ class TokenObtainView(ObtainAuthToken):
             'first_name': user.first_name,
             'last_name': user.last_name,
             'username': user.username,
+            'role': user.role
         }
 
         return Response(custom_response, status=status.HTTP_200_OK)
