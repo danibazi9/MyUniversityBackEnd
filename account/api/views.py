@@ -28,6 +28,7 @@ def registration_view(request):
                 data['username'] = account.username
                 data['first_name'] = account.first_name
                 data['last_name'] = account.last_name
+                data['email'] = account.email
                 data['role'] = account.role
                 return Response(data=data, status=status.HTTP_201_CREATED)
             # else:
@@ -74,6 +75,7 @@ class TokenObtainView(ObtainAuthToken):
             'first_name': user.first_name,
             'last_name': user.last_name,
             'username': user.username,
+            'email': user.email,
             'role': user.role
         }
 
