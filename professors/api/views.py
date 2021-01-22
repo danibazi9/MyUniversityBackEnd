@@ -190,7 +190,8 @@ def get_all_faculties(request):
     all_faculties = Faculty.objects.all()
     serializer = FacultySerializer(all_faculties, many=True)
 
-    return Response(serializer, status=status.HTTP_200_OK)
+    data = json.loads(json.dumps(serializer.data))
+    return Response(data, status=status.HTTP_200_OK)
 
 
 @api_view(['GET', ])
@@ -369,7 +370,7 @@ class AdminProfessor(APIView):
             if data['active'] == 'false':
                 active = False
             elif data['active'] != 'true':
-                return Response("Active: BAD REQUEST!", status=status.HTTP_400_BAD_REQUEST)\
+                return Response("Active: BAD REQUEST!", status=status.HTTP_400_BAD_REQUEST)
 
         if 'free_times_list' in data:
             for free_time_id in data['free_times_list']:
