@@ -36,6 +36,9 @@ class MyAccountManager(BaseUserManager):
         user.is_admin = True
         user.is_staff = True
         user.is_superuser = True
+        user.first_name = 'admin'
+        user.last_name = 'admin'
+        user.role = 'superuser'
         user.save(using=self._db)
         return user
 
@@ -47,6 +50,7 @@ class Account(AbstractBaseUser):
     email = models.EmailField(verbose_name="email", max_length=60, unique=True)
     student_id = models.IntegerField(unique=True)
     username = models.CharField(max_length=30, unique=True)
+    image = models.ImageField(upload_to='users/images/', blank=True)
     mobile_number = models.CharField(max_length=11, default="09100000000")
     password = models.CharField(max_length=20, blank=True)
     date_joined = models.DateTimeField(verbose_name='date joined', auto_now_add=True)
