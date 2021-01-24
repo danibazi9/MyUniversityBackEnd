@@ -308,8 +308,8 @@ class AdminAuthAll(APIView):
                 else:
                     users_to_show = EventAuthorizedOrganizer.objects.filter(Q(culture_deputy=culture_deputy),
                                                                             ~Q(user__user_id=culture_deputy.user_id),
-                                                                            (Q(user__first_name__icontains=search) |
-                                                                             Q(user__last_name__icontains=search) |
+                                                                            (Q(user__first_name__icontains=search),
+                                                                             Q(user__last_name__icontains=search),
                                                                              Q(user__username__icontains=search)
                                                                              )).exclude(user__is_admin=True)
                 serializer = EventAuthorizedOrganizerSerializer(users_to_show, many=True)

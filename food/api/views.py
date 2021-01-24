@@ -334,9 +334,9 @@ class AdminOrdersAll(APIView):
         if search is None or len(str(search)) == 0:
             orders = Order.objects.filter(last_update__date=timezone.now(), done=False)
         else:
-            orders = Order.objects.filter(Q(last_update__date=timezone.now(), done=False),
-                                          Q(customer__first_name__icontains=search) |
-                                          Q(customer__last_name__icontains=search))
+            orders = Order.objects.filter(last_update__date=timezone.now(), done=False,
+                                          customer__first_name__icontains=search,
+                                          customer__last_name__icontains=search)
 
         serializer = OrderSerializer(orders, many=True)
         data = json.loads(json.dumps(serializer.data))

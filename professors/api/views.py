@@ -2,7 +2,6 @@ import base64
 import json
 
 from django.core.files.base import ContentFile
-from django.db.models import Q
 from rest_framework import status
 from rest_framework.views import APIView
 from rest_framework.response import Response
@@ -31,12 +30,12 @@ def get_all_professors(request):
         if search is None:
             professors_to_show = Professor.objects.filter(faculty__id=faculty_id)
         else:
-            professors_to_show = Professor.objects.filter(Q(faculty__id=faculty_id),
-                                                          Q(first_name__icontains=search) |
-                                                          Q(last_name__icontains=search) |
-                                                          Q(academic_rank__icontains=search) |
-                                                          Q(research_axes__subject__icontains=search)
-                                                          )
+            professors_to_show = Professor.objects.filter(faculty__id=faculty_id,
+                                                          first_name__icontains=search,
+                                                          last_name__icontains=search,
+                                                          academic_rank__icontains=search,
+                                                          research_axes__subject__icontains=search)
+
         serializer = ProfessorSerializer(professors_to_show, many=True)
 
         data = json.loads(json.dumps(serializer.data))
@@ -93,12 +92,12 @@ def get_all_professors(request):
         if search is None:
             professors_to_show = Professor.objects.all()
         else:
-            professors_to_show = Professor.objects.filter(Q(first_name__icontains=search) |
-                                                          Q(last_name__icontains=search) |
-                                                          Q(faculty__name__icontains=search) |
-                                                          Q(academic_rank__icontains=search) |
-                                                          Q(research_axes__subject__icontains=search)
-                                                          )
+            professors_to_show = Professor.objects.filter(first_name__icontains=search,
+                                                          last_name__icontains=search,
+                                                          academic_rank__icontains=search,
+                                                          faculty__name__icontains=search,
+                                                          research_axes__subject__icontains=search)
+
         serializer = ProfessorSerializer(professors_to_show, many=True)
 
         data = json.loads(json.dumps(serializer.data))
@@ -211,10 +210,9 @@ def get_research_axes(request):
     if search is None:
         research_axes_to_show = ResearchAxis.objects.filter(faculty__id=faculty_id)
     else:
-        research_axes_to_show = ResearchAxis.objects.filter(Q(faculty__id=faculty_id),
-                                                            Q(faculty__name__icontains=search) |
-                                                            Q(subject__icontains=search)
-                                                            )
+        research_axes_to_show = ResearchAxis.objects.filter(faculty__id=faculty_id,
+                                                            faculty__name__icontains=search,
+                                                            subject__icontains=search)
 
     serializer = ResearchAxisSerializer(research_axes_to_show, many=True)
 
