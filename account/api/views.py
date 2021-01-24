@@ -89,7 +89,7 @@ class TokenObtainView(ObtainAuthToken):
         for key in info:
             custom_response[key] = info[key]
 
-        return Response(custom_response, status=status.HTTP_201_CREATED)
+        return Response(custom_response, status=status.HTTP_200_OK)
 
 
 @permission_classes((IsAuthenticated,))
