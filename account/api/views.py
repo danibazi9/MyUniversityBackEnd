@@ -76,23 +76,20 @@ def all_acounts_view(request):
 
 class TokenObtainView(ObtainAuthToken):
     def post(self, request, *args, **kwargs):
-        serializer = self.serializer_class(data=request.data,
-                                           context={'request': request})
+        serializer = self.serializer_class(data=request.data, context={'request': request})
         serializer.is_valid(raise_exception=True)
         user = serializer.validated_data['user']
         token, created = Token.objects.get_or_create(user=user)
-        custom_response = {
-            'token': token.key,
-            'user_id': user.user_id,
-            'first_name': user.first_name,
-            'last_name': user.last_name,
-            'username': user.username,
-            'image': user.image,
-            'email': user.email,
-            'role': user.role
-        }
+        custom_response = {'token': token.key}
 
-        return Response(custom_response, status=status.HTTP_200_OK)
+        user_to_login = Account.objects.get(email=request.data['username'])
+        serializer = AccountPropertiesSerializer(user_to_login)
+        info = json.loads(json.dumps(serializer.data))
+
+        for key in info:
+            custom_response[key] = info[key]
+
+        return Response(custom_response, status=status.HTTP_201_CREATED)
 
 
 @permission_classes((IsAuthenticated,))
