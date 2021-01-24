@@ -1,3 +1,7 @@
+import base64
+import json
+
+from django.core.files.base import ContentFile
 from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.decorators import api_view, permission_classes
@@ -21,15 +25,23 @@ def registration_view(request):
         if validate_email(serializer.validated_data.get('email')):
             # if serializer.validated_data.get('email').endswith('.iust.ac.ir'):
                 account = serializer.save()
+
+                if 'filename' in request.data and 'image' in request.data:
+                    filename = request.data['filename']
+                    file = ContentFile(base64.b64decode(request.data['image']), name=filename)
+                    account.image = file
+                    account.save()
+
                 data['response'] = 'successful'
                 token = Token.objects.get(user=account).key
                 data['token'] = token
-                data['user_id'] = account.user_id
-                data['username'] = account.username
-                data['first_name'] = account.first_name
-                data['last_name'] = account.last_name
-                data['email'] = account.email
-                data['role'] = account.role
+
+                serializer = AccountPropertiesSerializer(account)
+                info = json.loads(json.dumps(serializer.data))
+
+                for key in info:
+                    data[key] = info[key]
+
                 return Response(data=data, status=status.HTTP_201_CREATED)
             # else:
             #     return Response(f"The email '{serializer['email'].value}' isn't the academical university email",
@@ -75,6 +87,7 @@ class TokenObtainView(ObtainAuthToken):
             'first_name': user.first_name,
             'last_name': user.last_name,
             'username': user.username,
+            'image': user.image,
             'email': user.email,
             'role': user.role
         }
