@@ -25,8 +25,8 @@ class ServeAdmin(admin.ModelAdmin):
     list_filter = ['food', 'seller', 'date']
 
     def get_date(self, obj):
-        timestamp = datetime.datetime.timestamp(obj.date)
-        jalali_datetime = JalaliDate.fromtimestamp(timestamp)
+        my_date = datetime.datetime(obj.date.year, obj.date.month, obj.date.day)
+        jalali_datetime = JalaliDate.to_jalali(my_date)
         return jalali_datetime.strftime("%Y/%m/%d")
 
     class Meta:
