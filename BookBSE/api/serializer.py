@@ -4,6 +4,7 @@ from BookBSE.models import *
 
 class FacultySerializer(serializers.ModelSerializer):
     name = serializers.StringRelatedField(read_only=True)
+    image = serializers.StringRelatedField(read_only=True)
 
     class Meta:
         model = Faculty

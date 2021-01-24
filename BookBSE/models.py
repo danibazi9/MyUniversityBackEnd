@@ -4,6 +4,7 @@ from account.models import Account
 
 class Faculty(models.Model):
     name = models.CharField(max_length=125, unique=True)
+    image = models.ImageField(upload_to='faculty/images/', blank=True)
 
     def __str__(self):
         return self.name
