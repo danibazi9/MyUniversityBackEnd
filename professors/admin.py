@@ -16,7 +16,7 @@ admin.site.register(Time, TimeAdmin)
 
 class ResearchAxisAdmin(admin.ModelAdmin):
     list_display = ['research_axis_id', 'subject', 'faculty_name']
-    search_fields = ['subject', 'faculty']
+    search_fields = ['subject', 'faculty__name']
     list_filter = ['faculty']
 
     def faculty_name(self, obj):
@@ -32,7 +32,7 @@ admin.site.register(ResearchAxis, ResearchAxisAdmin)
 
 class ProfessorAdmin(admin.ModelAdmin):
     list_display = ['professor_id', 'first_name', 'last_name', 'faculty', 'academic_rank', 'email']
-    search_fields = ['first_name', 'last_name', 'faculty', 'academic_rank', 'email', 'research_axes']
+    search_fields = ['first_name', 'last_name', 'faculty__name', 'academic_rank', 'email']
     list_filter = ['last_name', 'faculty', 'academic_rank', 'active']
 
     class Meta:

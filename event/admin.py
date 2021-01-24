@@ -1,10 +1,16 @@
+import datetime
+
 from django.contrib import admin
+from persiantools.jdatetime import JalaliDateTime
+
 from . models import *
 
 
 class OrganizationAdmin(admin.ModelAdmin):
     list_display = ['organization_id', 'name', 'head_of_organization', 'culture_deputy']
-    search_fields = ['name', 'head_of_organization', 'culture_deputy']
+    search_fields = ['name', 'head_of_organization__first_name', 'head_of_organization__last_name',
+                     'head_of_organization__username', 'culture_deputy__first_name',
+                     'culture_deputy__last_name', 'culture_deputy__username']
     list_filter = ['name', 'head_of_organization', 'culture_deputy']
 
     class Meta:
@@ -16,7 +22,7 @@ admin.site.register(Organization, OrganizationAdmin)
 
 class EventAuthorizedOrganizerAdmin(admin.ModelAdmin):
     list_display = ['id', 'username', 'first_name', 'last_name', 'culture_deputy']
-    search_fields = ['user']
+    search_fields = ['user__first_name', 'user__last_name', 'user__username']
     list_filter = ['user']
 
     def username(self, obj):
@@ -40,7 +46,7 @@ admin.site.register(EventAuthorizedOrganizer, EventAuthorizedOrganizerAdmin)
 
 class CultureDeputyAdmin(admin.ModelAdmin):
     list_display = ['id', 'first_name', 'last_name', 'faculty_name']
-    search_fields = ['user', 'faculty']
+    search_fields = ['user__first_name', 'user__last_name', 'user__username', 'faculty__name']
     list_filter = ['user', 'faculty']
 
     def first_name(self, obj):
@@ -63,10 +69,20 @@ admin.site.register(CultureDeputy, CultureDeputyAdmin)
 
 
 class EventAdmin(admin.ModelAdmin):
-    list_display = ['event_id', 'name', 'organizer', 'start_time', 'end_time',
+    list_display = ['event_id', 'name', 'organizer', 'get_start_time', 'get_end_time',
                     'verified', 'remaining_capacity', 'capacity']
-    search_fields = ['name', 'organizer', 'description']
+    search_fields = ['name', 'organizer__name', 'description']
     list_filter = ['organizer', 'hold_type', 'verified']
+
+    def get_start_time(self, obj):
+        timestamp = datetime.datetime.timestamp(obj.start_time)
+        jalali_datetime = JalaliDateTime.fromtimestamp(timestamp)
+        return jalali_datetime.strftime("%Y/%m/%d - %H:%M")
+
+    def get_end_time(self, obj):
+        timestamp = datetime.datetime.timestamp(obj.end_time)
+        jalali_datetime = JalaliDateTime.fromtimestamp(timestamp)
+        return jalali_datetime.strftime("%Y/%m/%d - %H:%M")
 
     class Meta:
         model = Event
@@ -77,7 +93,7 @@ admin.site.register(Event, EventAdmin)
 
 class RegisterEventAdmin(admin.ModelAdmin):
     list_display = ['registerevent_id', 'username', 'first_name', 'last_name', 'event_name']
-    search_fields = ['event', 'registrant']
+    search_fields = ['event__name', 'registrant__first_name', 'registrant__last_name', 'registrant__username']
     list_filter = ['event', 'registrant']
 
     def username(self, obj):

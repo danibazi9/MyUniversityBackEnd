@@ -1,6 +1,9 @@
+import datetime
+
 from django.contrib import admin
 from django.core.paginator import Paginator
 from django.core.cache import cache
+from persiantools.jdatetime import JalaliDateTime
 
 from chat.models import *
 
@@ -39,12 +42,17 @@ class CachingPaginator(Paginator):
 
 
 class MessageAdmin(admin.ModelAdmin):
-    list_display = ['room_id', 'sender_id', 'content', 'timestamp']
+    list_display = ['room_id', 'sender_id', 'content', 'get_timestamp']
     list_filter = ['room_id', 'sender_id__username', 'timestamp']
     search_fields = ['room_id', 'sender_id__username', 'timestamp']
 
     show_full_result_count = False
     paginator = CachingPaginator
+
+    def get_timestamp(self, obj):
+        timestamp = datetime.datetime.timestamp(obj.timestamp)
+        jalali_datetime = JalaliDateTime.fromtimestamp(timestamp)
+        return jalali_datetime.strftime("%Y/%m/%d - %H:%M")
 
     class Meta:
         model = Message
