@@ -33,7 +33,7 @@ admin.site.register(ResearchAxis, ResearchAxisAdmin)
 class ProfessorAdmin(admin.ModelAdmin):
     list_display = ['professor_id', 'first_name', 'last_name', 'faculty', 'academic_rank', 'email']
     search_fields = ['first_name', 'last_name', 'faculty__name', 'academic_rank', 'email']
-    list_filter = ['last_name', 'faculty', 'academic_rank', 'active']
+    list_filter = ['faculty', 'academic_rank', 'active']
 
     class Meta:
         model = Professor
