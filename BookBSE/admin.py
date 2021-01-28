@@ -21,7 +21,7 @@ admin.site.register(Faculty, FacultyAdmin)
 class FieldAdmin(admin.ModelAdmin):
     list_display = ['id', 'name', 'faculty']
     search_fields = ['name', 'faculty__name']
-    list_filter = ['name', 'faculty']
+    list_filter = ['faculty']
 
     class Meta:
         model = Field
