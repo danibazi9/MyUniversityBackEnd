@@ -239,6 +239,8 @@ class UserGetProfessor(APIView):
             data = json.loads(json.dumps(serializer.data))
 
             del data['professor_id']
+
+            data['faculty_image'] = Faculty.objects.get(name=data['faculty']).image.url
             del data['faculty']
 
             if data['academic_rank'] == 'Assistant Professor':
