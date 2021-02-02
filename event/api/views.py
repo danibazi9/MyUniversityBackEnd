@@ -302,9 +302,9 @@ class AdminAuthAll(APIView):
 
         if state is not None:
             if state == 'true':
-                if search is None:
-                    users_to_show = EventAuthorizedOrganizer.objects.filter(culture_deputy=culture_deputy). \
-                        exclude(user_id=culture_deputy.user_id).exclude(is_admin=True)
+                if search is None or search.strip() == '':
+                    users_to_show = EventAuthorizedOrganizer.objects.filter(culture_deputy=culture_deputy).\
+                                                exclude(user_id=culture_deputy.user_id).exclude(user__is_admin=True)
                 else:
                     users_to_show = EventAuthorizedOrganizer.objects.filter(Q(culture_deputy=culture_deputy),
                                                                             ~Q(user__user_id=culture_deputy.user_id),
@@ -327,15 +327,17 @@ class AdminAuthAll(APIView):
             else:
                 return Response("State: BAD REQUEST!", status=status.HTTP_400_BAD_REQUEST)
         else:
-            if search is None:
-                users_to_show = Account.objects.all().exclude(user_id=culture_deputy.user_id).exclude(is_admin=True)
+            if search is None or search.strip() == '':
+                users_to_show = Account.objects.filter(role='student').\
+                    exclude(user_id=culture_deputy.user_id).exclude(is_admin=True)
             else:
                 users_to_show = Account.objects.filter(~Q(user_id=culture_deputy.user_id),
-                                                       ~Q(is_admin=True), (
-                        Q(first_name__icontains=search) |
-                        Q(last_name__icontains=search) |
-                        Q(username__icontains=search)
-                ))
+                                                       ~Q(is_admin=True),
+                                                       Q(role='student'),
+                                                       (Q(first_name__icontains=search) |
+                                                       Q(last_name__icontains=search) |
+                                                       Q(username__icontains=search)
+                                                        ))
             serializer = UserSerializer(users_to_show, many=True)
 
             data = json.loads(json.dumps(serializer.data))
@@ -367,7 +369,7 @@ class AdminAuth(APIView):
         if user_id is not None:
             try:
                 my_user = Account.objects.get(user_id=user_id)
-            except EventAuthorizedOrganizer.DoesNotExist:
+            except Account.DoesNotExist:
                 return Response(f"User with user_id {user_id} NOT FOUND!", status=status.HTTP_404_NOT_FOUND)
 
             try:
