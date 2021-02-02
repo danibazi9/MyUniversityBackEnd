@@ -249,8 +249,8 @@ class UserServes(APIView):
 
         if start_serve_time is not None and end_serve_time is not None:
             serves = Serve.objects.filter(date=date_encoded.date(),
-                                          start_serve_time__gte=start_serve_time,
-                                          end_serve_time__lte=end_serve_time)
+                                          start_serve_time__lte=start_serve_time,
+                                          end_serve_time__gte=end_serve_time)
 
             serializer = UserServeSerializer(serves, many=True)
             data = json.loads(json.dumps(serializer.data))
