@@ -115,7 +115,7 @@
     var roomName = {{ room_name_json }};
     var username = {{ username }};
 
-    var chatSocket = new ReconnectingWebSocket(
+    var chatSocket = new WebSocket(
         'ws://' + window.location.host +
         '/ws/chat/' + roomName + '/');
 
