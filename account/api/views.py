@@ -100,22 +100,29 @@ class logoutView(APIView):
         return Response("Successfully logged out!", status=status.HTTP_200_OK)
 
 
-@api_view(['PUT', ])
+@api_view(['POST', ])
 @permission_classes((IsAuthenticated,))
 def update_account_view(request):
-    try:
-        account = request.user
-    except Account.DoesNotExist:
-        return Response(status=status.HTTP_404_NOT_FOUND)
+    account = request.user
 
-    if request.method == 'PUT':
-        serializer = AccountPropertiesSerializer(account, data=request.data)
-        data = {}
-        if serializer.is_valid():
-            serializer.save()
-            data['response'] = 'Updating account has successfully done!'
-            return Response(data=data, status=status.HTTP_205_RESET_CONTENT)
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+    data = request.data
+
+    file = ""
+    if 'filename' in data and 'image' in data:
+        filename = data['filename']
+        file = ContentFile(base64.b64decode(data['image']), name=filename)
+
+    account.first_name = data['first_name']
+    account.last_name = data['last_name']
+    account.image = file
+    account.mobile_number = data['mobile_number']
+
+    account.save()
+
+    my_serializer = AccountPropertiesSerializer(account)
+    data = json.loads(json.dumps(my_serializer.data))
+
+    return Response(data, status=status.HTTP_205_RESET_CONTENT)
 
 
 @permission_classes((IsAuthenticated,))
