@@ -5,6 +5,7 @@ from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 
+from account.api.serializers import AccountPropertiesSerializer
 from .serializer import *
 
 
@@ -29,8 +30,33 @@ def chat_properties_view(request):
         serializer = RoomSerializer(rooms, many=True)
         data = json.loads(json.dumps(serializer.data))
         for x in data:
-            x['second_user_id'] = x['second_user_id'].split(',')[0]
-            x['first_user_id'] = x['first_user_id'].split(',')[0]
+            if account.user_id == x['second_user_id']:
+                account_to_find = Account.objects.get(user_id=x['first_user_id'])
+            else:
+                account_to_find = Account.objects.get(user_id=x['second_user_id'])
+
+            account_serializer = AccountPropertiesSerializer(account_to_find)
+            account_data = json.loads(json.dumps(account_serializer.data))
+
+            x['sender_image'] = account_data['image']
+
+            first_account = Account.objects.get(user_id=x['first_user_id'])
+            x['first_user_id'] = first_account.first_name + " " + first_account.last_name
+
+            second_account = Account.objects.get(user_id=x['second_user_id'])
+            x['second_user_id'] = second_account.first_name + " " + second_account.last_name
+
+            last_message = Message.objects.filter(room_id=x['room_id']).order_by('-timestamp')
+            if len(last_message) != 0:
+                message_serializer = MessageSerializer(last_message[0])
+                message_data = json.loads(json.dumps(message_serializer.data))
+
+                x['last_message'] = message_data['content']
+                x['last_message_timestamp'] = message_data['timestamp']
+            else:
+                x['last_message'] = ""
+                x['last_message_timestamp'] = ""
+
         return Response(data, status=status.HTTP_200_OK)
 
 

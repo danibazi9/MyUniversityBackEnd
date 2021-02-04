@@ -4,8 +4,8 @@ from chat.models import *
 
 
 class RoomSerializer(serializers.ModelSerializer):
-    first_user_id = serializers.StringRelatedField(read_only=True)
-    second_user_id = serializers.StringRelatedField(read_only=True)
+    # first_user_id = serializers.StringRelatedField(read_only=True)
+    # second_user_id = serializers.StringRelatedField(read_only=True)
 
     class Meta:
         model = Room
