@@ -19,7 +19,6 @@ class Organization(models.Model):
     established_year = models.IntegerField(blank=True)
     head_of_organization = models.ForeignKey(Account, on_delete=models.CASCADE)
     description = models.CharField(max_length=500, blank=True)
-    culture_deputy = models.ForeignKey(CultureDeputy, on_delete=models.CASCADE)
 
     def __str__(self):
         return self.name + ",    Head: " + self.head_of_organization.first_name + " " + self.head_of_organization.last_name
@@ -39,6 +38,7 @@ class Event(models.Model):
     name = models.CharField(max_length=255)
     image = models.ImageField(upload_to='event/images/', blank=True)
     organizer = models.ForeignKey(Organization, on_delete=models.CASCADE)
+    culture_deputy = models.ForeignKey(CultureDeputy, on_delete=models.CASCADE)
     description = models.TextField(blank=True)
     start_time = models.DateTimeField()
     end_time = models.DateTimeField()
