@@ -12,6 +12,14 @@ class EventSerializer(serializers.ModelSerializer):
         fields = '__all__'
 
 
+class CultureDeputySerializer(serializers.ModelSerializer):
+    faculty = serializers.StringRelatedField(read_only=True)
+
+    class Meta:
+        model = CultureDeputy
+        fields = '__all__'
+
+
 class UserSerializer(serializers.ModelSerializer):
 
     class Meta:
