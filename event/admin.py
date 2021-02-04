@@ -7,11 +7,10 @@ from . models import *
 
 
 class OrganizationAdmin(admin.ModelAdmin):
-    list_display = ['organization_id', 'name', 'head_of_organization', 'culture_deputy']
+    list_display = ['organization_id', 'name', 'head_of_organization']
     search_fields = ['name', 'head_of_organization__first_name', 'head_of_organization__last_name',
-                     'head_of_organization__username', 'culture_deputy__first_name',
-                     'culture_deputy__last_name', 'culture_deputy__username']
-    list_filter = ['name', 'head_of_organization', 'culture_deputy']
+                     'head_of_organization__username']
+    list_filter = ['name', 'head_of_organization']
 
     class Meta:
         model = Organization
@@ -69,10 +68,11 @@ admin.site.register(CultureDeputy, CultureDeputyAdmin)
 
 
 class EventAdmin(admin.ModelAdmin):
-    list_display = ['event_id', 'name', 'organizer', 'get_start_time', 'get_end_time',
+    list_display = ['event_id', 'name', 'organizer', 'culture_deputy', 'get_start_time', 'get_end_time',
                     'verified', 'remaining_capacity', 'capacity']
-    search_fields = ['name', 'organizer__name', 'description']
-    list_filter = ['organizer', 'hold_type', 'verified']
+    search_fields = ['name', 'organizer__name', 'description', 'culture_deputy__first_name',
+                     'culture_deputy__last_name', 'culture_deputy__username']
+    list_filter = ['organizer', 'hold_type', 'culture_deputy', 'verified']
 
     def get_start_time(self, obj):
         timestamp = datetime.datetime.timestamp(obj.start_time)
