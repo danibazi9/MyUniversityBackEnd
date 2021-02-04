@@ -36,6 +36,27 @@ def get_all_events(request):
     return Response(data_without_self, status=status.HTTP_200_OK)
 
 
+@api_view(['GET', ])
+@permission_classes((IsAuthenticated,))
+def get_all_deputies(request):
+    all_deputies = CultureDeputy.objects.all()
+
+    serializer = CultureDeputySerializer(all_deputies, many=True)
+    data = json.loads(json.dumps(serializer.data))
+
+    for x in data:
+        try:
+            user_to_show = Account.objects.get(user_id=x['user'])
+        except Account.DoesNotExist:
+            return Response(f"Account with user_id {x['user']} NOT FOUND!", status=status.HTTP_404_NOT_FOUND)
+
+        x['first_name'] = user_to_show.first_name
+        x['last_name'] = user_to_show.last_name
+        del x['user']
+
+    return Response(data, status=status.HTTP_200_OK)
+
+
 @permission_classes((IsAuthenticated,))
 class UserEvent(APIView):
     def get(self, args):
@@ -68,6 +89,16 @@ class UserEvent(APIView):
                             status=status.HTTP_404_NOT_FOUND)
 
         data = self.request.data
+
+        if 'culture_deputy_id' not in data:
+            return Response("culture_deputy_id: None, BAD REQUEST!", status=status.HTTP_400_BAD_REQUEST)
+
+        culture_deputy_id = data['culture_deputy_id']
+
+        try:
+            culture_deputy = CultureDeputy.objects.get(id=culture_deputy_id)
+        except CultureDeputy.DoesNotExist:
+            return Response(f"culture_deputy_id={culture_deputy_id}, NOT FOUND", status=status.HTTP_404_NOT_FOUND)
 
         start_time = datetime.datetime.strptime(data['start_time'], '%Y-%m-%d %H:%M:%S')
         start_time_datetime = datetime.datetime(year=start_time.year, month=start_time.month,
@@ -111,6 +142,7 @@ class UserEvent(APIView):
 
         event = Event(name=data['name'],
                       image=file,
+                      culture_deputy=culture_deputy,
                       organizer=organizer,
                       description=description,
                       start_time=start_time,
@@ -293,9 +325,9 @@ class AdminAuthAll(APIView):
             return Response("ERROR: You haven't been added as culture deputy of any faculty!",
                             status=status.HTTP_401_UNAUTHORIZED)
 
-        if len(culture_deputy.organization_set.all()) == 0:
-            return Response("Nothing! You haven't been added as culture deputy of any organization!",
-                            status=status.HTTP_404_NOT_FOUND)
+        # if len(culture_deputy.organization_set.all()) == 0:
+        #     return Response("Nothing! You haven't been added as culture deputy of any organization!",
+        #                     status=status.HTTP_404_NOT_FOUND)
 
         search = self.request.query_params.get('search', None)
         state = self.request.query_params.get('state', None)
@@ -355,14 +387,14 @@ class AdminAuthAll(APIView):
 class AdminAuth(APIView):
     def get(self, args):
         try:
-            culture_deputy = CultureDeputy.objects.get(user=self.request.user)
+            CultureDeputy.objects.get(user=self.request.user)
         except CultureDeputy.DoesNotExist:
             return Response("ERROR: You haven't been added as culture deputy of any faculty!",
                             status=status.HTTP_401_UNAUTHORIZED)
 
-        if len(culture_deputy.organization_set.all()) == 0:
-            return Response("Nothing! You haven't been added as culture deputy of any organization!",
-                            status=status.HTTP_404_NOT_FOUND)
+        # if len(culture_deputy.organization_set.all()) == 0:
+        #     return Response("Nothing! You haven't been added as culture deputy of any organization!",
+        #                     status=status.HTTP_404_NOT_FOUND)
 
         user_id = self.request.query_params.get('user_id', None)
 
@@ -406,9 +438,9 @@ class AdminAuth(APIView):
             return Response("ERROR: You haven't been added as culture deputy of any faculty!",
                             status=status.HTTP_401_UNAUTHORIZED)
 
-        if len(culture_deputy.organization_set.all()) == 0:
-            return Response("Nothing! You haven't been added as culture deputy of any organization!",
-                            status=status.HTTP_404_NOT_FOUND)
+        # if len(culture_deputy.organization_set.all()) == 0:
+        #     return Response("Nothing! You haven't been added as culture deputy of any organization!",
+        #                     status=status.HTTP_404_NOT_FOUND)
 
         request_body = json.loads(self.request.body)
 
@@ -454,9 +486,9 @@ def get_all_requests(request):
         return Response("ERROR: You haven't been added as culture deputy of any faculty!",
                         status=status.HTTP_401_UNAUTHORIZED)
 
-    if len(culture_deputy.organization_set.all()) == 0:
-        return Response("Nothing! You haven't been added as culture deputy of any organization!",
-                        status=status.HTTP_404_NOT_FOUND)
+    # if len(culture_deputy.organization_set.all()) == 0:
+    #     return Response("Nothing! You haven't been added as culture deputy of any organization!",
+    #                     status=status.HTTP_404_NOT_FOUND)
 
     search = request.query_params.get('search', None)
     state = request.query_params.get('state', None)
@@ -464,10 +496,10 @@ def get_all_requests(request):
     if state is not None:
         if state == 'true':
             if search is None:
-                events_to_show = Event.objects.filter(organizer__culture_deputy=culture_deputy, verified=True,
+                events_to_show = Event.objects.filter(culture_deputy=culture_deputy, verified=True,
                                                       end_time__gt=datetime.datetime.now())
             else:
-                events_to_show = Event.objects.filter(organizer__culture_deputy=culture_deputy, verified=True,
+                events_to_show = Event.objects.filter(culture_deputy=culture_deputy, verified=True,
                                                       name__icontains=search, end_time__gt=datetime.datetime.now())
             serializer = EventSerializer(events_to_show, many=True)
 
@@ -478,10 +510,10 @@ def get_all_requests(request):
             return Response(data, status=status.HTTP_200_OK)
         elif state == "false":
             if search is None:
-                events_to_show = Event.objects.filter(organizer__culture_deputy=culture_deputy, verified=False,
+                events_to_show = Event.objects.filter(culture_deputy=culture_deputy, verified=False,
                                                       end_time__gt=datetime.datetime.now())
             else:
-                events_to_show = Event.objects.filter(organizer__culture_deputy=culture_deputy, verified=False,
+                events_to_show = Event.objects.filter(culture_deputy=culture_deputy, verified=False,
                                                       name__icontains=search, end_time__gt=datetime.datetime.now())
             serializer = EventSerializer(events_to_show, many=True)
 
@@ -494,10 +526,10 @@ def get_all_requests(request):
             return Response("State: BAD REQUEST!", status=status.HTTP_400_BAD_REQUEST)
     else:
         if search is None:
-            events_to_show = Event.objects.filter(organizer__culture_deputy=culture_deputy,
+            events_to_show = Event.objects.filter(culture_deputy=culture_deputy,
                                                   end_time__gt=datetime.datetime.now())
         else:
-            events_to_show = Event.objects.filter(organizer__culture_deputy=culture_deputy, name__icontains=search,
+            events_to_show = Event.objects.filter(culture_deputy=culture_deputy, name__icontains=search,
                                                   end_time__gt=datetime.datetime.now())
 
         serializer = EventSerializer(events_to_show, many=True)
@@ -511,14 +543,14 @@ def get_all_requests(request):
 class Requests(APIView):
     def get(self, args):
         try:
-            culture_deputy = CultureDeputy.objects.get(user=self.request.user)
+            CultureDeputy.objects.get(user=self.request.user)
         except CultureDeputy.DoesNotExist:
             return Response("ERROR: You haven't been added as culture deputy of any faculty!",
                             status=status.HTTP_401_UNAUTHORIZED)
 
-        if len(culture_deputy.organization_set.all()) == 0:
-            return Response("Nothing! You haven't been added as culture deputy of any organization!",
-                            status=status.HTTP_404_NOT_FOUND)
+        # if len(culture_deputy.organization_set.all()) == 0:
+        #     return Response("Nothing! You haven't been added as culture deputy of any organization!",
+        #                     status=status.HTTP_404_NOT_FOUND)
 
         event_id = self.request.query_params.get('event_id', None)
 
@@ -538,14 +570,14 @@ class Requests(APIView):
 
     def post(self, args):
         try:
-            culture_deputy = CultureDeputy.objects.get(user=self.request.user)
+            CultureDeputy.objects.get(user=self.request.user)
         except CultureDeputy.DoesNotExist:
             return Response("ERROR: You haven't been added as culture deputy of any faculty!",
                             status=status.HTTP_401_UNAUTHORIZED)
 
-        if len(culture_deputy.organization_set.all()) == 0:
-            return Response("Nothing! You haven't been added as culture deputy of any organization!",
-                            status=status.HTTP_404_NOT_FOUND)
+        # if len(culture_deputy.organization_set.all()) == 0:
+        #     return Response("Nothing! You haven't been added as culture deputy of any organization!",
+        #                     status=status.HTTP_404_NOT_FOUND)
 
         request_body = json.loads(self.request.body)
 
@@ -594,9 +626,9 @@ class AdminRequestsHistory(APIView):
             return Response("ERROR: You haven't been added as culture deputy of any faculty!",
                             status=status.HTTP_401_UNAUTHORIZED)
 
-        if len(culture_deputy.organization_set.all()) == 0:
-            return Response("Nothing! You haven't been added as culture deputy of any organization!",
-                            status=status.HTTP_404_NOT_FOUND)
+        # if len(culture_deputy.organization_set.all()) == 0:
+        #     return Response("Nothing! You haven't been added as culture deputy of any organization!",
+        #                     status=status.HTTP_404_NOT_FOUND)
 
         events = Event.objects.filter(culture_deputy=culture_deputy)
         serializer = EventSerializer(events, many=True)

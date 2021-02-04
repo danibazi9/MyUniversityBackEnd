@@ -11,4 +11,5 @@ urlpatterns = [
     path('user/', views.UserEvent.as_view()),
     path('user/register/', views.UserRegisterEvent.as_view()),
     path('user/history/', views.UserEventsHistory.as_view()),
+    path('user/culture-deputies/', views.get_all_deputies),
 ]
