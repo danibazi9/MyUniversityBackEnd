@@ -41,10 +41,14 @@ def chat_properties_view(request):
             x['sender_image'] = account_data['image']
 
             first_account = Account.objects.get(user_id=x['first_user_id'])
-            x['first_user_id'] = first_account.first_name + " " + first_account.last_name
-
             second_account = Account.objects.get(user_id=x['second_user_id'])
-            x['second_user_id'] = second_account.first_name + " " + second_account.last_name
+
+            x['first_user_id'] = account.first_name + " " + account.last_name
+
+            if account.user_id == first_account.user_id:
+                x['second_user_id'] = second_account.first_name + " " + second_account.last_name
+            else:
+                x['second_user_id'] = first_account.first_name + " " + first_account.last_name
 
             last_message = Message.objects.filter(room_id=x['room_id']).order_by('-timestamp')
             if len(last_message) != 0:
